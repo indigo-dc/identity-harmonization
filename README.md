@@ -1,1 +1,1 @@
-# identity-harmonization
+# INDIGO-DataCLoud Identity-Harmonization Service
