@@ -20,7 +20,6 @@ import org.apache.directory.api.ldap.model.constants.AuthenticationLevel;
 import org.apache.directory.api.ldap.model.constants.SchemaConstants;
 import org.apache.directory.api.ldap.model.entry.Attribute;
 import org.apache.directory.api.ldap.model.entry.Entry;
-import org.apache.directory.api.ldap.model.entry.StringValue;
 import org.apache.directory.api.ldap.model.entry.Value;
 import org.apache.directory.api.ldap.model.exception.LdapAuthenticationException;
 import org.apache.directory.api.ldap.model.exception.LdapException;
@@ -58,6 +57,22 @@ public class EcpAuthenticator extends SimpleAuthenticator {
 
 	private static final Logger logger = LoggerFactory.getLogger(EcpAuthenticator.class);
 
+	// Reg-App connection properties, overwritten by system properties
+	// registerApp.serviceUrl
+	private static String serviceUrl = "https://localhost/rest/ecp/regid/";
+	// registerApp.serviceUsername
+	private static String serviceUsername = "ldaprest";
+	// registerApp.servicePassword
+	private static String servicePassword = "qwertz";
+	// from registerApp.serviceUrl
+	private static String serviceHost = "localhost";
+	// from registerApp.serviceUrl
+	private static int servicePort = 443;
+	// from registerApp.serviceUrl
+	private static String serviceProtocol = "http";
+	// registerApp.checkCert
+	private static Boolean checkCert = Boolean.TRUE;
+
 	public EcpAuthenticator() {
 		super();
 
@@ -74,103 +89,117 @@ public class EcpAuthenticator extends SimpleAuthenticator {
 			logger.debug("SimpleAuthentication succeded, no ECP auth");
 			return principal;
 		} catch (LdapException e) {
-			logger.debug("ECP Authenticate called");
-
-			if (bindContext.getEntry() == null || bindContext.getEntry().get("description") == null)
-				lookupUserPassword(bindContext);
-
-			Object o = bindContext.getEntry().get("description").get();
-			String regId;
-			if (o instanceof StringValue)
-				regId = ((StringValue) o).getValue();
-			else
-				throw new IllegalStateException("description not of type String");
-
-			byte[] credentials = bindContext.getCredentials();
-			String password;
-			try {
-				password = new String(credentials, "UTF-8");
-			} catch (UnsupportedEncodingException e1) {
-				logger.error("Unsupported encoding: UTF-8");
-				throw new LdapAuthenticationException("Internal server error");
-			}
-
-			logger.debug("trying login for regId {}", regId);
-
-			String serviceUrl = "https://localhost/rest/ecp/regid/";
-			String serviceUsername = "ldaprest";
-			String servicePassword = "qwertz";
-			String serviceHost;
-			Boolean checkCert = Boolean.TRUE;
-
-			if (System.getProperty("registerApp.serviceUrl") != null)
-				serviceUrl = System.getProperty("registerApp.serviceUrl");
-			if (System.getProperty("registerApp.serviceUsername") != null)
-				serviceUsername = System.getProperty("registerApp.serviceUsername");
-			if (System.getProperty("registerApp.servicePassword") != null)
-				servicePassword = System.getProperty("registerApp.servicePassword");
-			if (System.getProperty("registerApp.checkCert") != null)
-				checkCert = Boolean.parseBoolean(System.getProperty("registerApp.checkCert"));
-
-			try {
-				serviceHost = new URI(serviceUrl).getHost();
-			} catch (URISyntaxException e2) {
-				logger.warn("Service URL is misconfigured", e2);
-				throw new LdapException(e2);
-			}
-
-			logger.debug("ECPAuth Config: url {}, user {}, pass {}, host {}, cert {}",
-					new Object[] { serviceUrl, serviceUsername, servicePassword, serviceHost, checkCert });
-
-			DefaultHttpClient httpClient = getHttpClient(checkCert);
-
-			httpClient.getCredentialsProvider().setCredentials(new AuthScope(serviceHost, 443),
-					new UsernamePasswordCredentials(serviceUsername, servicePassword));
-
-			HttpPost post;
-			try {
-				post = new HttpPost(serviceUrl + URLEncoder.encode(regId, "UTF-8"));
-			} catch (UnsupportedEncodingException e2) {
-				logger.warn("UnsupportedEncodingException", e2);
-				throw new LdapException(e2);
-			}
-
-			try {
-				List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-				nvps.add(new BasicNameValuePair("password", password));
-				post.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
-				logger.debug(post.getEntity().toString());
-				HttpResponse response = httpClient.execute(post);
-				if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-					String responseString = EntityUtils.toString(response.getEntity());
-					logger.debug(responseString);
-					return new LdapPrincipal(getDirectoryService().getSchemaManager(), bindContext.getDn(),
-							AuthenticationLevel.SIMPLE);
-				} else if (response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
-					logger.info("User {} is not authorized by idp", regId);
-				} else {
-					logger.warn("Statuscode bad: {}", response.getStatusLine());
-					String responseString = EntityUtils.toString(response.getEntity());
-					logger.debug(responseString);
-				}
-			} catch (UnsupportedEncodingException e1) {
-				logger.warn("UnsupportedEncodingException", e1);
-			} catch (ClientProtocolException e1) {
-				logger.warn("ClientProtocolException", e1);
-			} catch (ParseException e1) {
-				logger.warn("ParseException", e1);
-			} catch (IOException e1) {
-				logger.warn("IOException", e1);
-			}
-
-			String message = I18n.err(I18n.ERR_230, bindContext.getDn().getName());
-			logger.info(message);
-			throw new LdapAuthenticationException(message);
+			logger.warn("LdapException", e);
 		}
+
+		logger.debug("ECP Authenticate called");
+
+		// TODO - needs to be reconsidered
+		//
+		// bindContext.getEntry() == null -> no ldap entry for dn
+		// bindContext.getEntry().get("description") == null -> no description
+		// attribute for ldap dn entry, associated with the user's Reg-App Id
+		//
+		// if (bindContext.getEntry() == null ||
+		// bindContext.getEntry().get("description") == null)
+		// lookupUserPassword(bindContext);
+
+		String regId = "";
+
+		try {
+			regId = (String) bindContext.getEntry().get("description").get().getValue();
+		} catch (NullPointerException e) {
+			logger.error("Entry has no description", e);
+			// throw new IllegalStateException("entry has no description");
+		} catch (ClassCastException e) {
+			logger.error("Description not of type String", e);
+			throw new IllegalStateException("description not of type String");
+		}
+
+		byte[] credentials = bindContext.getCredentials();
+		String password;
+		try {
+			password = new String(credentials, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			logger.error("Unsupported encoding: UTF-8");
+			throw new LdapAuthenticationException("Internal server error");
+		}
+
+		logger.debug("trying login for regId {}", regId);
+
+		if (System.getProperty("registerApp.serviceUrl") != null)
+			serviceUrl = System.getProperty("registerApp.serviceUrl");
+		if (System.getProperty("registerApp.serviceUsername") != null)
+			serviceUsername = System.getProperty("registerApp.serviceUsername");
+		if (System.getProperty("registerApp.servicePassword") != null)
+			servicePassword = System.getProperty("registerApp.servicePassword");
+		if (System.getProperty("registerApp.checkCert") != null)
+			checkCert = Boolean.parseBoolean(System.getProperty("registerApp.checkCert"));
+
+		try {
+			serviceHost = new URI(serviceUrl).getHost();
+			servicePort = new URI(serviceUrl).getPort();
+			serviceProtocol = new URI(serviceUrl).getScheme();
+		} catch (URISyntaxException e) {
+			logger.warn("Service URL is misconfigured", e);
+			throw new LdapException(e);
+		}
+
+		logger.debug("ECPAuth Config: url {}, user {}, pass {}, host {}, port {}, protocol {}, cert {}", new Object[] {
+				serviceUrl, serviceUsername, servicePassword, serviceHost, servicePort, serviceProtocol, checkCert });
+
+		DefaultHttpClient httpClient = getHttpClient(serviceProtocol, checkCert);
+
+		httpClient.getCredentialsProvider().setCredentials(new AuthScope(serviceHost, servicePort),
+				new UsernamePasswordCredentials(serviceUsername, servicePassword));
+
+		HttpPost post;
+		try {
+			post = new HttpPost(serviceUrl + URLEncoder.encode(regId, "UTF-8"));
+
+			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
+			nvps.add(new BasicNameValuePair("password", password));
+			post.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
+
+			logger.debug(post.getEntity().toString());
+
+			HttpResponse response = httpClient.execute(post);
+
+			if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+				String responseString = EntityUtils.toString(response.getEntity());
+				logger.debug(responseString);
+				return new LdapPrincipal(getDirectoryService().getSchemaManager(), bindContext.getDn(),
+						AuthenticationLevel.SIMPLE);
+			} else if (response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
+				logger.info("User {} is not authorized by idp", regId);
+			} else {
+				logger.warn("Statuscode bad: {}", response.getStatusLine());
+				String responseString = EntityUtils.toString(response.getEntity());
+				logger.debug(responseString);
+			}
+		} catch (UnsupportedEncodingException e) {
+			logger.warn("UnsupportedEncodingException", e);
+		} catch (ClientProtocolException e) {
+			logger.warn("ClientProtocolException", e);
+		} catch (ParseException e) {
+			logger.warn("ParseException", e);
+		} catch (IOException e) {
+			logger.warn("IOException", e);
+		}
+
+		String message = I18n.err(I18n.ERR_230, bindContext.getDn().getName());
+		logger.info(message);
+		throw new LdapAuthenticationException(message);
+
 	}
 
-	private DefaultHttpClient getHttpClient(Boolean checkCert) {
-		if (!checkCert) {
+	private DefaultHttpClient getHttpClient(String serviceProtocol, Boolean checkCert) {
+		// TODO - remove in production
+		// HTTP support for testing
+		if (serviceProtocol.toLowerCase().equals("http")) {
+			return new DefaultHttpClient();
+		}
+		if (checkCert) {
 			return new DefaultHttpClient();
 		} else {
 			try {
@@ -206,6 +235,7 @@ public class EcpAuthenticator extends SimpleAuthenticator {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private byte[] lookupUserPassword(BindOperationContext bindContext) throws LdapException {
 		// ---- lookup the principal entry's userPassword attribute
 		Entry userEntry;
