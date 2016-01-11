@@ -1,20 +1,9 @@
 package edu.kit.scc.dei.adsecp;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
+import java.util.Properties;
 
 import org.apache.directory.api.ldap.model.constants.AuthenticationLevel;
 import org.apache.directory.api.ldap.model.constants.SchemaConstants;
@@ -31,68 +20,70 @@ import org.apache.directory.server.core.api.interceptor.context.BindOperationCon
 import org.apache.directory.server.core.api.interceptor.context.LookupOperationContext;
 import org.apache.directory.server.core.authn.SimpleAuthenticator;
 import org.apache.directory.server.i18n.I18n;
-import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.NameValuePair;
-import org.apache.http.ParseException;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.conn.ClientConnectionManager;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.SingleClientConnManager;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.protocol.HTTP;
-import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import edu.kit.scc.Utils;
+import edu.kit.scc.http.HttpClient;
+import edu.kit.scc.http.HttpResponse;
+import edu.kit.scc.http.HttpsClient;
 
 public class EcpAuthenticator extends SimpleAuthenticator {
 
 	private static final Logger logger = LoggerFactory.getLogger(EcpAuthenticator.class);
 
 	// Reg-App connection properties, overwritten by system properties
-	// registerApp.serviceUrl
-	private static String serviceUrl = "https://localhost/rest/ecp/regid/";
-	// registerApp.serviceUsername
-	private static String serviceUsername = "ldaprest";
-	// registerApp.servicePassword
-	private static String servicePassword = "qwertz";
+	//
+	// config.properties regapp.serviceUrl or registerApp.serviceUrl
+	private String serviceUrl;
+	// config.properties regapp.serviceUsername or registerApp.serviceUsername
+	private String serviceUsername;
+	// config.properties regapp.servicePassword or registerApp.servicePassword
+	private String servicePassword;
+	// config.properties regapp.checkCert or registerApp.checkCert
+	private Boolean checkCert;
+
 	// from registerApp.serviceUrl
-	private static String serviceHost = "localhost";
+	private String serviceHost;
 	// from registerApp.serviceUrl
-	private static int servicePort = 443;
+	private int servicePort;
 	// from registerApp.serviceUrl
-	private static String serviceProtocol = "http";
-	// registerApp.checkCert
-	private static Boolean checkCert = Boolean.TRUE;
+	private String serviceProtocol;
 
 	public EcpAuthenticator() {
 		super();
 
+		Properties properties = Utils.loadProperties();
+		this.serviceUrl = properties.getProperty("regapp.serviceUrl");
+		this.serviceUsername = properties.getProperty("regapp.serviceUsername");
+		this.servicePassword = properties.getProperty("regapp.servicePassword");
+		this.checkCert = Boolean.valueOf(properties.getProperty("regapp.checkCert"));
+
 		logger.info("Constructing EcpAuthenticator");
+		logger.debug("RegApp service url {}", serviceUrl);
+		logger.debug("RegApp service username {}", serviceUsername);
+		logger.debug("RegApp service password {}", servicePassword);
+		logger.debug("RegApp check certificate {}", checkCert);
 	}
 
 	@Override
 	public LdapPrincipal authenticate(BindOperationContext bindContext) throws LdapException {
-		logger.debug("Starting ECP Auth routine for {}", bindContext.getDn());
-
 		try {
+			logger.debug("Starting ECP Auth routine for {}", bindContext.getDn());
+
 			LdapPrincipal principal = super.authenticate(bindContext);
 
 			logger.debug("SimpleAuthentication succeded, no ECP auth");
+
 			return principal;
+		} catch (NullPointerException e) {
+			logger.warn(e.getMessage());
 		} catch (LdapException e) {
 			logger.warn("LdapException", e);
 		}
 
-		logger.debug("ECP Authenticate called");
+		logger.debug("ECP authenticate called");
 
 		// TODO - needs to be reconsidered
 		//
@@ -104,7 +95,7 @@ public class EcpAuthenticator extends SimpleAuthenticator {
 		// bindContext.getEntry().get("description") == null)
 		// lookupUserPassword(bindContext);
 
-		String regId = "";
+		String regId = "007";
 
 		try {
 			regId = (String) bindContext.getEntry().get("description").get().getValue();
@@ -116,25 +107,19 @@ public class EcpAuthenticator extends SimpleAuthenticator {
 			throw new IllegalStateException("description not of type String");
 		}
 
-		byte[] credentials = bindContext.getCredentials();
-		String password;
+		String password = "";
 		try {
+			byte[] credentials = bindContext.getCredentials();
 			password = new String(credentials, "UTF-8");
+		} catch (NullPointerException e) {
+			logger.error("Context has no password", e);
+			// throw new IllegalStateException("entry has no description");
 		} catch (UnsupportedEncodingException e) {
-			logger.error("Unsupported encoding: UTF-8");
+			logger.error("Unsupported encoding: UTF-8", e);
 			throw new LdapAuthenticationException("Internal server error");
 		}
 
 		logger.debug("trying login for regId {}", regId);
-
-		if (System.getProperty("registerApp.serviceUrl") != null)
-			serviceUrl = System.getProperty("registerApp.serviceUrl");
-		if (System.getProperty("registerApp.serviceUsername") != null)
-			serviceUsername = System.getProperty("registerApp.serviceUsername");
-		if (System.getProperty("registerApp.servicePassword") != null)
-			servicePassword = System.getProperty("registerApp.servicePassword");
-		if (System.getProperty("registerApp.checkCert") != null)
-			checkCert = Boolean.parseBoolean(System.getProperty("registerApp.checkCert"));
 
 		try {
 			serviceHost = new URI(serviceUrl).getHost();
@@ -148,91 +133,42 @@ public class EcpAuthenticator extends SimpleAuthenticator {
 		logger.debug("ECPAuth Config: url {}, user {}, pass {}, host {}, port {}, protocol {}, cert {}", new Object[] {
 				serviceUrl, serviceUsername, servicePassword, serviceHost, servicePort, serviceProtocol, checkCert });
 
-		DefaultHttpClient httpClient = getHttpClient(serviceProtocol, checkCert);
+		serviceUrl = serviceUrl.replaceAll("/$", "");
+		serviceUrl += "/" + regId;
 
-		httpClient.getCredentialsProvider().setCredentials(new AuthScope(serviceHost, servicePort),
-				new UsernamePasswordCredentials(serviceUsername, servicePassword));
+		HttpResponse response = null;
+		if (serviceProtocol.toLowerCase().equals("http")) {
+			HttpClient httpClient = new HttpClient();
+			response = httpClient.makeHTTPPostRequest(serviceUsername, servicePassword, "password=" + password,
+					serviceUrl);
+			logger.debug(String.valueOf(response.toString()));
+		} else if (serviceProtocol.toLowerCase().equals("https")) {
+			HttpsClient httpsClient = new HttpsClient();
+			response = httpsClient.makeHTTPSPostRequest(serviceUsername, servicePassword, "password=" + password,
+					serviceUrl);
+			logger.debug(String.valueOf(response.toString()));
+		} else {
+			logger.error("Unsupported protocol: {}", serviceProtocol.toLowerCase());
+			throw new LdapAuthenticationException("Internal server error");
+		}
 
-		HttpPost post;
-		try {
-			post = new HttpPost(serviceUrl + URLEncoder.encode(regId, "UTF-8"));
+		if (response.getStatusCode() == HttpStatus.SC_OK) {
 
-			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-			nvps.add(new BasicNameValuePair("password", password));
-			post.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
+			return new LdapPrincipal(getDirectoryService().getSchemaManager(), bindContext.getDn(),
+					AuthenticationLevel.SIMPLE);
 
-			logger.debug(post.getEntity().toString());
-
-			HttpResponse response = httpClient.execute(post);
-
-			if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-				String responseString = EntityUtils.toString(response.getEntity());
-				logger.debug(responseString);
-				return new LdapPrincipal(getDirectoryService().getSchemaManager(), bindContext.getDn(),
-						AuthenticationLevel.SIMPLE);
-			} else if (response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
-				logger.info("User {} is not authorized by idp", regId);
-			} else {
-				logger.warn("Statuscode bad: {}", response.getStatusLine());
-				String responseString = EntityUtils.toString(response.getEntity());
-				logger.debug(responseString);
-			}
-		} catch (UnsupportedEncodingException e) {
-			logger.warn("UnsupportedEncodingException", e);
-		} catch (ClientProtocolException e) {
-			logger.warn("ClientProtocolException", e);
-		} catch (ParseException e) {
-			logger.warn("ParseException", e);
-		} catch (IOException e) {
-			logger.warn("IOException", e);
+		} else if (response.getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
+			logger.info("User {} is not authorized by idp", regId);
+		} else {
+			logger.warn("Statuscode bad: {}", response.getStatusCode());
+			String responseString = response.getResponseString();
+			logger.debug(responseString);
 		}
 
 		String message = I18n.err(I18n.ERR_230, bindContext.getDn().getName());
 		logger.info(message);
 		throw new LdapAuthenticationException(message);
 
-	}
-
-	private DefaultHttpClient getHttpClient(String serviceProtocol, Boolean checkCert) {
-		// TODO - remove in production
-		// HTTP support for testing
-		if (serviceProtocol.toLowerCase().equals("http")) {
-			return new DefaultHttpClient();
-		}
-		if (checkCert) {
-			return new DefaultHttpClient();
-		} else {
-			try {
-				SSLContext sslContext = SSLContext.getInstance("SSL");
-				sslContext.init(null, new TrustManager[] { new X509TrustManager() {
-					public X509Certificate[] getAcceptedIssuers() {
-						return null;
-					}
-
-					public void checkClientTrusted(X509Certificate[] certs, String authType) {
-					}
-
-					public void checkServerTrusted(X509Certificate[] certs, String authType) {
-					}
-				} }, new SecureRandom());
-
-				SSLSocketFactory sf = new SSLSocketFactory(sslContext, new AllowAllHostnameVerifier());
-				Scheme httpsScheme = new Scheme("https", 443, sf);
-				SchemeRegistry schemeRegistry = new SchemeRegistry();
-				schemeRegistry.register(httpsScheme);
-
-				// apache HttpClient version >4.2 should use
-				// BasicClientConnectionManager
-				ClientConnectionManager cm = new SingleClientConnManager(schemeRegistry);
-				return new DefaultHttpClient(cm);
-			} catch (KeyManagementException e) {
-				logger.warn("Problem while createing no cert check http client", e);
-				return new DefaultHttpClient();
-			} catch (NoSuchAlgorithmException e) {
-				logger.warn("Problem while createing no cert check http client", e);
-				return new DefaultHttpClient();
-			}
-		}
 	}
 
 	@SuppressWarnings("unused")
