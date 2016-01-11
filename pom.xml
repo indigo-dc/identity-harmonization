@@ -55,7 +55,7 @@
 						</goals>
 						<configuration>
 							<outputDirectory>
-								${project.build.directory}/lib
+								${project.build.directory}
 							</outputDirectory>
 							<overWriteReleases>false</overWriteReleases>
 							<overWriteSnapshots>false</overWriteSnapshots>

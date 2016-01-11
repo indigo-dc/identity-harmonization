@@ -29,11 +29,10 @@ public class Main {
 		// scimClient.getUsers("admin", "admin");
 		// scimClient.getGroups("admin", "admin");
 
-		// HttpClient client = new HttpClient();
-		// HttpResponse response =
-		// client.makeHTTPPOSTRequest("password=password",
-		// "http://localhost:50070");
-		// log.debug(response.toString());
+		Utils.printProperties();
+		HttpClient client = new HttpClient();
+		HttpResponse response = client.makeHTTPPostRequest("password=password", "http://localhost:50070");
+		log.debug(response.toString());
 		// client.makePOST("localhost", 50070, "user", "password",
 		// "http://localhost:50070");
 	}
