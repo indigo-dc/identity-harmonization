@@ -39,12 +39,12 @@ public class Main {
 		// client.makePOST("localhost", 50070, "user", "password",
 		// "http://localhost:50070");
 
-		// EcpAuthenticator auth = new EcpAuthenticator();
-		// try {
-		// auth.authenticate(null);
-		// } catch (LdapException e) {
-		// // TODO Auto-generated catch block
-		// e.printStackTrace();
-		// }
+		 EcpAuthenticator auth = new EcpAuthenticator();
+		 try {
+		 auth.authenticate(null);
+		 } catch (LdapException e) {
+		 // TODO Auto-generated catch block
+		 e.printStackTrace();
+		 }
 	}
 }
