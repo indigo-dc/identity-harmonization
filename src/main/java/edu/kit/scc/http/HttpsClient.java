@@ -3,7 +3,6 @@ package edu.kit.scc.http;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Base64;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -11,6 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.io.ByteStreams;
+
+import edu.kit.scc.Utils;
 
 /**
  * HTTPS client implementation.
@@ -57,7 +58,7 @@ public class HttpsClient {
 			urlConnection.setRequestProperty("Accept", "*/*");
 
 			if (user != null && !user.isEmpty()) {
-				String value = Base64.getEncoder().encodeToString((user + ":" + password).getBytes());
+				String value = Utils.encodeBase64(user + ":" + password);
 				log.debug("Authorization: Basic {}", value);
 				urlConnection.setRequestProperty("Authorization", "Basic " + value);
 			}
@@ -126,7 +127,7 @@ public class HttpsClient {
 			urlConnection.setDoOutput(true);
 
 			if (user != null && !user.isEmpty()) {
-				String value = Base64.getEncoder().encodeToString((user + ":" + password).getBytes());
+				String value = Utils.encodeBase64(user + ":" + password);
 				log.debug("Authorization: Basic {}", value);
 				urlConnection.setRequestProperty("Authorization", "Basic " + value);
 			}

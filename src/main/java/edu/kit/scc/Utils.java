@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.util.Map.Entry;
 import java.util.Properties;
 
+import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,6 +14,10 @@ public final class Utils {
 	private static final Logger log = LoggerFactory.getLogger(Utils.class);
 
 	private Utils() {
+	}
+
+	public static String encodeBase64(String string) {
+		return new String(Base64.encodeBase64(string.getBytes()));
 	}
 
 	public static Properties loadProperties() {

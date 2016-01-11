@@ -10,7 +10,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 
 import javax.net.ssl.SSLContext;
@@ -40,6 +39,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.io.ByteStreams;
+
+import edu.kit.scc.Utils;
 
 /**
  * HTTP client implementation.
@@ -86,7 +87,7 @@ public class HttpClient {
 			urlConnection.setRequestProperty("Accept", "*/*");
 
 			if (user != null && !user.isEmpty()) {
-				String value = Base64.getEncoder().encodeToString((user + ":" + password).getBytes());
+				String value = Utils.encodeBase64(user + ":" + password);
 				log.debug("Authorization: Basic {}", value);
 				urlConnection.setRequestProperty("Authorization", "Basic " + value);
 			}
@@ -154,7 +155,7 @@ public class HttpClient {
 			urlConnection.setDoOutput(true);
 
 			if (user != null && !user.isEmpty()) {
-				String value = Base64.getEncoder().encodeToString((user + ":" + password).getBytes());
+				String value = Utils.encodeBase64(user + ":" + password);
 				log.debug("Authorization: Basic {}", value);
 				urlConnection.setRequestProperty("Authorization", "Basic " + value);
 			}
