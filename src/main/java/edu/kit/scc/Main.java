@@ -1,10 +1,8 @@
 package edu.kit.scc;
 
-import org.apache.directory.api.ldap.model.exception.LdapException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import edu.kit.scc.dei.adsecp.EcpAuthenticator;
 import edu.kit.scc.http.HttpClient;
 import edu.kit.scc.http.HttpResponse;
 
@@ -38,13 +36,5 @@ public class Main {
 		// log.debug(response.toString());
 		// client.makePOST("localhost", 50070, "user", "password",
 		// "http://localhost:50070");
-
-		 EcpAuthenticator auth = new EcpAuthenticator();
-		 try {
-		 auth.authenticate(null);
-		 } catch (LdapException e) {
-		 // TODO Auto-generated catch block
-		 e.printStackTrace();
-		 }
 	}
 }
