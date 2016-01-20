@@ -35,8 +35,13 @@ import org.opensaml.DefaultBootstrap;
 import org.opensaml.common.SAMLVersion;
 import org.opensaml.common.impl.SecureRandomIdentifierGenerator;
 import org.opensaml.common.xml.SAMLConstants;
+import org.opensaml.saml2.core.Assertion;
+import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeQuery;
+import org.opensaml.saml2.core.AttributeStatement;
+import org.opensaml.saml2.core.AttributeValue;
 import org.opensaml.saml2.core.AuthnRequest;
+import org.opensaml.saml2.core.Conditions;
 import org.opensaml.saml2.core.Issuer;
 import org.opensaml.saml2.core.NameID;
 import org.opensaml.saml2.core.NameIDPolicy;
@@ -56,6 +61,7 @@ import org.opensaml.xml.io.Marshaller;
 import org.opensaml.xml.io.MarshallerFactory;
 import org.opensaml.xml.io.MarshallingException;
 import org.opensaml.xml.parse.BasicParserPool;
+import org.opensaml.xml.schema.XSAny;
 import org.opensaml.xml.security.SecurityException;
 import org.opensaml.xml.security.SecurityHelper;
 import org.opensaml.xml.security.keyinfo.KeyInfoGenerator;
@@ -73,9 +79,14 @@ public class SamlClient {
 
 	private static final Logger log = LoggerFactory.getLogger(SamlClient.class);
 
+	private XMLObjectBuilderFactory builderFactory;
+	private MarshallerFactory marshallerFactory;
+	
 	public SamlClient() {
 		try {
 			DefaultBootstrap.bootstrap();
+			builderFactory = Configuration.getBuilderFactory();
+			marshallerFactory = Configuration.getMarshallerFactory();
 		} catch (ConfigurationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -113,8 +124,72 @@ public class SamlClient {
 		return returnString;
 	}
 
+	public void attributeResponse(String nameId, String issuerHost) {
+		NameID nameID = (NameID) builderFactory.getBuilder(NameID.DEFAULT_ELEMENT_NAME)
+				.buildObject(NameID.DEFAULT_ELEMENT_NAME);
+		nameID.setValue(nameId);
+		nameID.setFormat(NameID.PERSISTENT);
+
+		Subject subject = (Subject) builderFactory.getBuilder(Subject.DEFAULT_ELEMENT_NAME)
+				.buildObject(Subject.DEFAULT_ELEMENT_NAME);
+		subject.setNameID(nameID);
+
+		Issuer issuer = (Issuer) builderFactory.getBuilder(Issuer.DEFAULT_ELEMENT_NAME)
+				.buildObject(Issuer.DEFAULT_ELEMENT_NAME);
+		issuer.setValue(issuerHost);
+
+		Map<String, String> attributes = new HashMap<String, String>();
+		attributes.put("securityClearance", "C2");
+		attributes.put("roles", "editor,reviewer");
+
+		DateTime now = new DateTime();
+
+		Assertion assertion = (Assertion) builderFactory.getBuilder(Assertion.DEFAULT_ELEMENT_NAME)
+				.buildObject(Assertion.DEFAULT_ELEMENT_NAME);
+		assertion.setID(getRandomId());
+		assertion.setIssueInstant(now);
+		assertion.setIssuer(issuer);
+		assertion.setSubject(subject);
+
+		Conditions conditions = (Conditions) builderFactory.getBuilder(Conditions.DEFAULT_ELEMENT_NAME)
+				.buildObject(Conditions.DEFAULT_ELEMENT_NAME);
+		conditions.setNotBefore(now.minusSeconds(10));
+		conditions.setNotOnOrAfter(now.plusMinutes(30));
+		assertion.setConditions(conditions);
+
+		AttributeStatement statement = (AttributeStatement) builderFactory
+				.getBuilder(AttributeStatement.DEFAULT_ELEMENT_NAME)
+				.buildObject(AttributeStatement.DEFAULT_ELEMENT_NAME);
+
+		if (attributes != null)
+			for (Map.Entry<String, String> entry : attributes.entrySet()) {
+				XSAny element = (XSAny) builderFactory.getBuilder(XSAny.TYPE_NAME)
+						.buildObject(AttributeValue.DEFAULT_ELEMENT_NAME);
+				element.setTextContent(entry.getValue());
+
+				Attribute attribute = (Attribute) builderFactory.getBuilder(Attribute.DEFAULT_ELEMENT_NAME)
+						.buildObject(Attribute.DEFAULT_ELEMENT_NAME);
+				attribute.setName(entry.getKey());
+				attribute.getAttributeValues().add(element);
+
+				statement.getAttributes().add(attribute);
+			}
+
+		assertion.getStatements().add(statement);
+
+		Marshaller marshaller = marshallerFactory.getMarshaller(assertion);
+
+		Element element;
+		try {
+			element = marshaller.marshall(assertion);
+			log.debug(XMLHelper.prettyPrintXML(element));
+		} catch (MarshallingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
 	public void attributeQuery(String username, String password, String nameId, String issuerHost) {
-		XMLObjectBuilderFactory builderFactory = Configuration.getBuilderFactory();
 
 		NameID nameID = (NameID) builderFactory.getBuilder(NameID.DEFAULT_ELEMENT_NAME)
 				.buildObject(NameID.DEFAULT_ELEMENT_NAME);
@@ -138,23 +213,24 @@ public class SamlClient {
 		attrQuery.setIssueInstant(new DateTime());
 		attrQuery.setIssuer(issuer);
 
-//		AuthnRequest attrQuery = (AuthnRequest) builderFactory.getBuilder(AuthnRequest.DEFAULT_ELEMENT_NAME)
-//				.buildObject(AuthnRequest.DEFAULT_ELEMENT_NAME);
-//		attrQuery.setID(getRandomId());
-//		attrQuery.setVersion(SAMLVersion.VERSION_20);
-//		attrQuery.setIssueInstant(new DateTime());
-//		attrQuery.setIssuer(issuer);
-//		attrQuery.setForceAuthn(false);
-//		attrQuery.setIsPassive(false);
-//		attrQuery.setProtocolBinding(SAMLConstants.SAML2_PAOS_BINDING_URI);
-//		attrQuery.setAssertionConsumerServiceURL("https://ldf.data.kit.edu/Shibboleth.sso/SAML2/POST");
-//		
-//		NameIDPolicy idPolicy = (NameIDPolicy)builderFactory.getBuilder(NameIDPolicy.DEFAULT_ELEMENT_NAME)
-//				.buildObject(NameIDPolicy.DEFAULT_ELEMENT_NAME);
-//		idPolicy.setAllowCreate(true);
-//		attrQuery.setNameIDPolicy(idPolicy);
-		
-		MarshallerFactory marshallerFactory = Configuration.getMarshallerFactory();
+		// AuthnRequest attrQuery = (AuthnRequest)
+		// builderFactory.getBuilder(AuthnRequest.DEFAULT_ELEMENT_NAME)
+		// .buildObject(AuthnRequest.DEFAULT_ELEMENT_NAME);
+		// attrQuery.setID(getRandomId());
+		// attrQuery.setVersion(SAMLVersion.VERSION_20);
+		// attrQuery.setIssueInstant(new DateTime());
+		// attrQuery.setIssuer(issuer);
+		// attrQuery.setForceAuthn(false);
+		// attrQuery.setIsPassive(false);
+		// attrQuery.setProtocolBinding(SAMLConstants.SAML2_PAOS_BINDING_URI);
+		// attrQuery.setAssertionConsumerServiceURL("https://ldf.data.kit.edu/Shibboleth.sso/SAML2/POST");
+		//
+		// NameIDPolicy idPolicy =
+		// (NameIDPolicy)builderFactory.getBuilder(NameIDPolicy.DEFAULT_ELEMENT_NAME)
+		// .buildObject(NameIDPolicy.DEFAULT_ELEMENT_NAME);
+		// idPolicy.setAllowCreate(true);
+		// attrQuery.setNameIDPolicy(idPolicy);
+
 		Marshaller marshaller = marshallerFactory.getMarshaller(attrQuery);
 
 		Element element;
@@ -215,9 +291,11 @@ public class SamlClient {
 			httpClient.getParams().setAuthenticationPreemptive(true);
 			httpClient.getState().setCredentials(new AuthScope("idp.scc.kit.edu", 443, AuthScope.ANY_REALM),
 					new UsernamePasswordCredentials(username, password));
-//			httpClient.getState().addCookie(new Cookie("idp.scc.kit.edu", "JSESSIONID", getRandomId().substring(1), "/idp/profile/SAML2/SOAP/ECP", 3600, true));
+			// httpClient.getState().addCookie(new Cookie("idp.scc.kit.edu",
+			// "JSESSIONID", getRandomId().substring(1),
+			// "/idp/profile/SAML2/SOAP/ECP", 3600, true));
 			HttpSignableSoapClient client = new HttpSignableSoapClient(httpClient, pool, signature);
-//			HttpSOAPClient client = new HttpSOAPClient(httpClient, pool);
+			// HttpSOAPClient client = new HttpSOAPClient(httpClient, pool);
 			client.send("https://idp.scc.kit.edu/idp/profile/SAML2/SOAP/ECP", soapMessageContext);
 
 			Envelope response = (Envelope) soapMessageContext.getInboundMessage();

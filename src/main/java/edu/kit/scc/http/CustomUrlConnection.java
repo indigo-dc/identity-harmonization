@@ -21,7 +21,7 @@ public final class CustomUrlConnection {
 	public static HttpsURLConnection getSecureHttpConnection(boolean checkCertificate, String url) {
 		HttpsURLConnection urlConnection = null;
 		try {
-			log.debug("parse url {}", url);
+			log.debug("Try url {}", url);
 			URL uri = new URL(url);
 
 			SSLContext sslContext = null;
@@ -51,7 +51,7 @@ public final class CustomUrlConnection {
 	public static HttpURLConnection getHttpConnection(String url) {
 		HttpURLConnection urlConnection = null;
 		try {
-			log.debug("parse url {}", url);
+			log.debug("Try url {}", url);
 			URL uri = new URL(url);
 
 			urlConnection = (HttpURLConnection) uri.openConnection();

@@ -1,7 +1,5 @@
 package edu.kit.scc.http;
 
-import java.util.Arrays;
-
 public class HttpResponse {
 
 	public int statusCode;
@@ -29,7 +27,7 @@ public class HttpResponse {
 	@Override
 	public String toString() {
 		return "HttpResponse [statusCode=" + statusCode + ", "
-				+ (response != null ? "response=" + Arrays.toString(response) : "") + "]";
+				+ (response != null ? "response=" + new String(response) : "") + "]";
 	}
 
 }

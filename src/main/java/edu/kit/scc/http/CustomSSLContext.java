@@ -20,6 +20,7 @@ import javax.net.ssl.X509TrustManager;
 
 public final class CustomSSLContext {
 
+	@SuppressWarnings("unused")
 	private static final String cert = "-----BEGIN CERTIFICATE-----\n"
 			+ "MIICNTCCAZ6gAwIBAgIES343gjANBgkqhkiG9w0BAQUFADBVMQswCQYDVQQGEwJV"
 			+ "UzELMAkGA1UECAwCQ0ExFjAUBgNVBAcMDU1vdW50YWluIFZpZXcxDTALBgNVBAoM"

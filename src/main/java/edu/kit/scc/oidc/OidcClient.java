@@ -3,13 +3,14 @@ package edu.kit.scc.oidc;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Properties;
 
 import javax.net.ssl.SSLContext;
 
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
 import com.nimbusds.oauth2.sdk.AuthorizationCodeGrant;
@@ -32,7 +33,6 @@ import com.nimbusds.openid.connect.sdk.OIDCTokenResponse;
 import com.nimbusds.openid.connect.sdk.OIDCTokenResponseParser;
 import com.nimbusds.openid.connect.sdk.UserInfoRequest;
 
-import edu.kit.scc.Utils;
 import edu.kit.scc.http.CustomSSLContext;
 import edu.kit.scc.http.NullHostNameVerifier;
 
@@ -42,40 +42,27 @@ import edu.kit.scc.http.NullHostNameVerifier;
  * @author benjamin
  *
  */
+@Component
 public class OidcClient {
 
 	private static final Logger log = LoggerFactory.getLogger(OidcClient.class);
 
-	private SSLContext sslContext;
+	private SSLContext sslContext = CustomSSLContext.initEmptySslContext();
 
+	@Value("${oauth2.clientId}")
 	private String clientId;
+
+	@Value("${oauth2.clientSecret}")
 	private String clientSecret;
+
+	@Value("${oauth2.redirectUri}")
 	private String redirectUri;
 
+	@Value("${oidc.tokenEndpoint}")
 	private String oidcTokenEndpoint;
+
+	@Value("${oidc.userInfoEndpoint}")
 	private String oidcUserInfoEndpoint;
-
-	/**
-	 * OIDC client.
-	 * 
-	 */
-	public OidcClient() {
-		this.sslContext = CustomSSLContext.initEmptySslContext();
-
-		Properties properties = Utils.loadProperties();
-
-		this.clientId = properties.getProperty("oauth2.clientId");
-		this.clientSecret = properties.getProperty("oauth2.clientSecret");
-		this.redirectUri = properties.getProperty("oauth2.redirectUri");
-		this.oidcTokenEndpoint = properties.getProperty("oidc.tokenEndpoint");
-		this.oidcUserInfoEndpoint = properties.getProperty("oidc.userInfoEndpoint");
-
-		log.debug("OAuth2 client id {}", clientId);
-		log.debug("OAuth2 client secret {}", clientSecret);
-		log.debug("OAuth2 redirect uri {}", redirectUri);
-		log.debug("OIDC token endpoint {}", oidcTokenEndpoint);
-		log.debug("OIDC user info endpoint {}", oidcUserInfoEndpoint);
-	}
 
 	/**
 	 * Gets all the user information from the OIDC HTTPS user endpoint.
@@ -90,7 +77,12 @@ public class OidcClient {
 		try {
 			AccessToken token = AccessToken.parse("Bearer " + accessToken);
 
-			UserInfoRequest request = new UserInfoRequest(new URI(oidcUserInfoEndpoint), (BearerAccessToken) token);
+			URI uri = new URI(oidcUserInfoEndpoint);
+			UserInfoRequest request = new UserInfoRequest(uri, (BearerAccessToken) token);
+			HTTPRequest httpRequest = request.toHTTPRequest();
+
+			httpRequest.setDefaultHostnameVerifier(new NullHostNameVerifier());
+			httpRequest.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
 
 			HTTPResponse response = null;
 			response = request.toHTTPRequest().send();
