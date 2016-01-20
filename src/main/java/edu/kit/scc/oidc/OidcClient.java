@@ -32,6 +32,7 @@ import com.nimbusds.oauth2.sdk.token.Tokens;
 import com.nimbusds.openid.connect.sdk.OIDCTokenResponse;
 import com.nimbusds.openid.connect.sdk.OIDCTokenResponseParser;
 import com.nimbusds.openid.connect.sdk.UserInfoRequest;
+import com.nimbusds.openid.connect.sdk.token.OIDCTokens;
 
 import edu.kit.scc.http.CustomSSLContext;
 import edu.kit.scc.http.NullHostNameVerifier;
@@ -126,10 +127,10 @@ public class OidcClient {
 	 *            the OAuth2 authorization code
 	 * @return a {@link Tokens} bundle with all OIDC tokens
 	 */
-	public Tokens requestTokens(String authorizationCode) {
+	public OIDCTokens requestTokens(String authorizationCode) {
 		AuthorizationCode code = new AuthorizationCode(authorizationCode);
 
-		Tokens tokens = null;
+		OIDCTokens tokens = null;
 
 		try {
 			URI redirectUri = new URI(this.redirectUri);
@@ -162,10 +163,9 @@ public class OidcClient {
 
 			OIDCTokenResponse oidcTokenResponse = (OIDCTokenResponse) response;
 
-			tokens = oidcTokenResponse.getTokens();
+			tokens = oidcTokenResponse.getOIDCTokens();
 
-			log.debug(tokens.toJSONObject().toJSONString());
-
+			log.debug(oidcTokenResponse.getOIDCTokens().toJSONObject().toJSONString());
 			return tokens;
 		} catch (ParseException e) {
 			e.printStackTrace();

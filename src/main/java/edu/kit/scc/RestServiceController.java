@@ -1,5 +1,7 @@
 package edu.kit.scc;
 
+import java.text.ParseException;
+
 import org.apache.commons.codec.binary.Base64;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -14,6 +16,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.nimbusds.jwt.JWT;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.openid.connect.sdk.token.OIDCTokens;
 
 import edu.kit.scc.http.HttpClient;
 import edu.kit.scc.http.HttpResponse;
@@ -74,12 +80,20 @@ public class RestServiceController {
 		}
 
 		// OIDC
-		JSONObject oidcJson = null;
+		JSONObject oidcJson = new JSONObject();
 		try {
 			String token = body.split("=")[1];
-			oidcJson = oidcClient.requestUserInfo(token);
+			// oidcJson = oidcClient.requestUserInfo(token);
+			OIDCTokens tokens = oidcClient.requestTokens(token);
+			JWT jwt = tokens.getIDToken();
+			JWTClaimsSet claimsSet = jwt.getJWTClaimsSet();
+			log.debug(claimsSet.toJSONObject().toJSONString());
+
 		} catch (ArrayIndexOutOfBoundsException e) {
 			throw new UnauthorizedException();
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 
 		if (oidcJson != null && !oidcJson.isNull("error")) {
@@ -91,6 +105,9 @@ public class RestServiceController {
 		JSONObject scimJson = scimClient.getUser(name);
 
 		// we are looking for "roles" in the SCIM response and sync with LDAP
+
+		// if nothing succeeded, fail
+		throw new UnauthorizedException();
 	}
 
 	@ResponseStatus(value = HttpStatus.UNAUTHORIZED)
