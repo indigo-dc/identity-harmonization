@@ -10,16 +10,16 @@ package edu.kit.scc.dao;
 
 import java.util.List;
 
-import edu.kit.scc.dto.UserDTO;
+import edu.kit.scc.dto.GroupDTO;
 
-public interface UserDAO {
-	public List<UserDTO> getAllUsers();
+public interface GroupDAO {
+	public List<GroupDTO> getAllGroups();
 
-	public List<UserDTO> getUserDetails(String uid);
+	public List<GroupDTO> getGroupDetails(String commonName);
 
-	public void insertUser(UserDTO userDTO);
+	public void insertGroup(GroupDTO groupDTO);
 
-	public void updateUser(UserDTO userDTO);
+	public void updateGroup(GroupDTO groupDTO);
 
-	public void deleteUser(UserDTO userDTO);
+	public void deleteGroup(GroupDTO groupDTO);
 }

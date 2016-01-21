@@ -1,3 +1,11 @@
+/*   Copyright 2016 Karlsruhe Institute of Technology (KIT)
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+ */
 package edu.kit.scc.ldap;
 
 import java.util.List;
@@ -18,26 +26,31 @@ import org.springframework.ldap.support.LdapUtils;
 import edu.kit.scc.dao.UserDAO;
 import edu.kit.scc.dto.UserDTO;
 
-public class LDAPUserDAO implements UserDAO {
+public class LdapUserDAO implements UserDAO {
 
-	private static final Logger log = LoggerFactory.getLogger(LDAPUserDAO.class);
+	private static final Logger log = LoggerFactory.getLogger(LdapUserDAO.class);
 
 	private LdapTemplate ldapTemplate;
+
+	private String userBase;
 
 	public void setLdapTemplate(LdapTemplate ldapTemplate) {
 		this.ldapTemplate = ldapTemplate;
 	}
 
-	@Override
-	public List<UserDTO> getAllUserNames() {
-		return ldapTemplate.search("", "(objectclass=person)", new UserAttributeMapper());
+	public void setUserBase(String userBase) {
+		this.userBase = userBase;
 	}
 
 	@Override
-	public List<UserDTO> getUserDetails(String commonName, String lastName) {
+	public List<UserDTO> getAllUsers() {
+		return ldapTemplate.search(userBase, "(objectclass=person)", new UserAttributeMapper());
+	}
+
+	@Override
+	public List<UserDTO> getUserDetails(String uid) {
 		AndFilter andFilter = new AndFilter();
-		andFilter.and(new EqualsFilter("objectclass", "person")).and(new EqualsFilter("cn", commonName))
-				.and(new EqualsFilter("sn", lastName));
+		andFilter.and(new EqualsFilter("objectclass", "person")).and(new EqualsFilter("uid", uid));
 		log.debug("LDAP query {}", andFilter.encode());
 
 		return ldapTemplate.search("", andFilter.encode(), new UserAttributeMapper());
@@ -45,7 +58,6 @@ public class LDAPUserDAO implements UserDAO {
 
 	@Override
 	public void insertUser(UserDTO userDTO) {
-
 		BasicAttribute personBasicAttribute = new BasicAttribute("objectclass");
 		personBasicAttribute.add("person");
 
@@ -54,11 +66,12 @@ public class LDAPUserDAO implements UserDAO {
 		personAttributes.put("cn", userDTO.getCommonName());
 		personAttributes.put("sn", userDTO.getLastName());
 		personAttributes.put("description", userDTO.getDescription());
+		personAttributes.put("uid", userDTO.getUid());
 
 		LdapName newUserDN = LdapUtils.emptyLdapName();
 		try {
-			newUserDN = new LdapName("o=sshService");
-			newUserDN.add("uid=" + userDTO.getCommonName());
+			newUserDN = new LdapName(userBase);
+			newUserDN.add("uid=" + userDTO.getUid());
 			log.debug(newUserDN.toString());
 			// ldapTemplate.bind(newUserDN, null, personAttributes);
 		} catch (InvalidNameException e) {
@@ -80,7 +93,7 @@ public class LDAPUserDAO implements UserDAO {
 
 		LdapName newUserDN = LdapUtils.emptyLdapName();
 		try {
-			newUserDN = new LdapName("o=sshService");
+			newUserDN = new LdapName(userBase);
 			newUserDN.add("uid=" + userDTO.getCommonName());
 			log.debug(newUserDN.toString());
 			// ldapTemplate.rebind(newUserDN, null, personAttributes);
@@ -94,7 +107,7 @@ public class LDAPUserDAO implements UserDAO {
 	public void deleteUser(UserDTO userDTO) {
 		LdapName newUserDN = LdapUtils.emptyLdapName();
 		try {
-			newUserDN = new LdapName("o=sshService");
+			newUserDN = new LdapName(userBase);
 			newUserDN.add("uid=" + userDTO.getCommonName());
 			log.debug(newUserDN.toString());
 			// ldapTemplate.unbind(newUserDN);
@@ -103,5 +116,4 @@ public class LDAPUserDAO implements UserDAO {
 			e.printStackTrace();
 		}
 	}
-
 }

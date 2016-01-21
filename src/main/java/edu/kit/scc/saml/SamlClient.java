@@ -1,3 +1,11 @@
+/*   Copyright 2016 Karlsruhe Institute of Technology (KIT)
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+ */
 package edu.kit.scc.saml;
 
 import java.io.FileInputStream;
@@ -81,7 +89,7 @@ public class SamlClient {
 
 	private XMLObjectBuilderFactory builderFactory;
 	private MarshallerFactory marshallerFactory;
-	
+
 	public SamlClient() {
 		try {
 			DefaultBootstrap.bootstrap();
@@ -294,7 +302,7 @@ public class SamlClient {
 			// httpClient.getState().addCookie(new Cookie("idp.scc.kit.edu",
 			// "JSESSIONID", getRandomId().substring(1),
 			// "/idp/profile/SAML2/SOAP/ECP", 3600, true));
-			HttpSignableSoapClient client = new HttpSignableSoapClient(httpClient, pool, signature);
+			HttpSOAPClient client = new HttpSOAPClient(httpClient, pool);
 			// HttpSOAPClient client = new HttpSOAPClient(httpClient, pool);
 			client.send("https://idp.scc.kit.edu/idp/profile/SAML2/SOAP/ECP", soapMessageContext);
 
