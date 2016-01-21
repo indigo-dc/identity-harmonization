@@ -44,13 +44,13 @@ public class LdapUserDAO implements UserDAO {
 
 	@Override
 	public List<UserDTO> getAllUsers() {
-		return ldapTemplate.search(userBase, "(objectclass=person)", new UserAttributeMapper());
+		return ldapTemplate.search(userBase, "(objectclass=inetOrgPerson)", new UserAttributeMapper());
 	}
 
 	@Override
 	public List<UserDTO> getUserDetails(String uid) {
 		AndFilter andFilter = new AndFilter();
-		andFilter.and(new EqualsFilter("objectclass", "person")).and(new EqualsFilter("uid", uid));
+		andFilter.and(new EqualsFilter("objectclass", "inetOrgPerson")).and(new EqualsFilter("uid", uid));
 		log.debug("LDAP query {}", andFilter.encode());
 
 		return ldapTemplate.search("", andFilter.encode(), new UserAttributeMapper());
@@ -59,7 +59,7 @@ public class LdapUserDAO implements UserDAO {
 	@Override
 	public void insertUser(UserDTO userDTO) {
 		BasicAttribute personBasicAttribute = new BasicAttribute("objectclass");
-		personBasicAttribute.add("person");
+		personBasicAttribute.add("inetOrgPerson");
 
 		Attributes personAttributes = new BasicAttributes();
 		personAttributes.put(personBasicAttribute);
@@ -73,7 +73,7 @@ public class LdapUserDAO implements UserDAO {
 			newUserDN = new LdapName(userBase);
 			newUserDN.add("uid=" + userDTO.getUid());
 			log.debug(newUserDN.toString());
-			// ldapTemplate.bind(newUserDN, null, personAttributes);
+			ldapTemplate.bind(newUserDN, null, personAttributes);
 		} catch (InvalidNameException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -83,20 +83,21 @@ public class LdapUserDAO implements UserDAO {
 	@Override
 	public void updateUser(UserDTO userDTO) {
 		BasicAttribute personBasicAttribute = new BasicAttribute("objectclass");
-		personBasicAttribute.add("person");
+		personBasicAttribute.add("inetOrgPerson");
 
 		Attributes personAttributes = new BasicAttributes();
 		personAttributes.put(personBasicAttribute);
 		personAttributes.put("cn", userDTO.getCommonName());
 		personAttributes.put("sn", userDTO.getLastName());
 		personAttributes.put("description", userDTO.getDescription());
+		personAttributes.put("uid", userDTO.getUid());
 
 		LdapName newUserDN = LdapUtils.emptyLdapName();
 		try {
 			newUserDN = new LdapName(userBase);
-			newUserDN.add("uid=" + userDTO.getCommonName());
+			newUserDN.add("uid=" + userDTO.getUid());
 			log.debug(newUserDN.toString());
-			// ldapTemplate.rebind(newUserDN, null, personAttributes);
+			ldapTemplate.rebind(newUserDN, null, personAttributes);
 		} catch (InvalidNameException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -108,9 +109,9 @@ public class LdapUserDAO implements UserDAO {
 		LdapName newUserDN = LdapUtils.emptyLdapName();
 		try {
 			newUserDN = new LdapName(userBase);
-			newUserDN.add("uid=" + userDTO.getCommonName());
+			newUserDN.add("uid=" + userDTO.getUid());
 			log.debug(newUserDN.toString());
-			// ldapTemplate.unbind(newUserDN);
+			ldapTemplate.unbind(newUserDN);
 		} catch (InvalidNameException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

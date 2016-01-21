@@ -113,4 +113,25 @@ public class LdapClient {
 
 		return groupList;
 	}
+
+	/**
+	 * Creates a new LDAP user.
+	 * 
+	 * @param uid
+	 *            the user's uid
+	 * @param cn
+	 *            the user's common name
+	 * @param sn
+	 *            the user's sure name
+	 * @param description
+	 *            the user's description
+	 */
+	public void createUser(String uid, String cn, String sn, String description) {
+		UserDTO user = new UserDTO();
+		user.setCommonName(cn);
+		user.setDescription(description);
+		user.setLastName(sn);
+		user.setUid(uid);
+		ldapUser.insertUser(user);
+	}
 }

@@ -71,7 +71,7 @@ public class LdapGroupDAO implements GroupDAO {
 			newGroupDN = new LdapName(groupBase);
 			newGroupDN.add("cn=" + groupDTO.getCommonName());
 			log.debug(newGroupDN.toString());
-			// ldapTemplate.bind(newUserDN, null, personAttributes);
+			ldapTemplate.bind(newGroupDN, null, posixGroupAttributes);
 		} catch (InvalidNameException e) {
 			e.printStackTrace();
 		}
@@ -92,7 +92,7 @@ public class LdapGroupDAO implements GroupDAO {
 			newGroupDN = new LdapName(groupBase);
 			newGroupDN.add("cn=" + groupDTO.getCommonName());
 			log.debug(newGroupDN.toString());
-			// ldapTemplate.bind(newUserDN, null, personAttributes);
+			ldapTemplate.bind(newGroupDN, null, posixGroupAttributes);
 		} catch (InvalidNameException e) {
 			e.printStackTrace();
 		}
@@ -105,7 +105,7 @@ public class LdapGroupDAO implements GroupDAO {
 			newGroupDN = new LdapName(groupBase);
 			newGroupDN.add("cn=" + groupDTO.getCommonName());
 			log.debug(newGroupDN.toString());
-			// ldapTemplate.unbind(newUserDN);
+			ldapTemplate.unbind(newGroupDN);
 		} catch (InvalidNameException e) {
 			e.printStackTrace();
 		}

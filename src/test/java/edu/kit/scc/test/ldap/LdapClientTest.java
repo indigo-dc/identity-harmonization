@@ -33,4 +33,9 @@ public class LdapClientTest {
 	public void getLdapUsersTest() {
 		ldapClient.getLdapUsers();
 	}
+
+	@Test
+	public void createLdapUserTest() {
+		ldapClient.createUser("newUser", "newUser", "newUser", "newUser");
+	}
 }
