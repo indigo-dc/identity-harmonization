@@ -6,7 +6,7 @@
 
        http://www.apache.org/licenses/LICENSE-2.0
  */
-package edu.kit.scc.test;
+package edu.kit.scc.test.oidc;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,22 +15,25 @@ import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import edu.kit.scc.Application;
-import edu.kit.scc.ldap.LdapClient;
+import edu.kit.scc.oidc.OidcClient;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = Application.class)
-public class LdapClientTests {
+public class OidcClientTest {
 
 	@Autowired
-	private LdapClient ldapClient;
+	private OidcClient oidcClient;
 
 	@Test
-	public void getLdapGroupsTest() {
-		ldapClient.getLdapGroups();
+	public void requestOIDCTokenTest() {
+		String authorizationCode = "";
+		oidcClient.requestTokens(authorizationCode);
 	}
 
 	@Test
-	public void getLdapUsersTest() {
-		ldapClient.getLdapUsers();
+	public void requestUserInfoTest() {
+		String accessToken = "";
+		oidcClient.requestUserInfo(accessToken);
 	}
+
 }
