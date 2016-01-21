@@ -52,7 +52,7 @@ public class ScimClient {
 	public JSONObject getUser(String name) {
 		JSONObject json = null;
 		HttpClient client = new HttpClient();
-		String url = userEndpoint + "?filter=userNameEq" + name;
+		String url = userEndpoint + "?userNameEq" + name;
 		HttpResponse response = client.makeHttpsGetRequest(user, password, url);
 
 		if (response != null) {

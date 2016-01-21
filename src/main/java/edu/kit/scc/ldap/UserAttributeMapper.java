@@ -27,12 +27,21 @@ public class UserAttributeMapper implements AttributesMapper<UserDTO> {
 		String commonName = (String) attributes.get("cn").get();
 		if (commonName != null)
 			userDTO.setCommonName(commonName);
-		String lastName = (String) attributes.get("sn").get();
-		if (lastName != null)
-			userDTO.setLastName(lastName);
+		String surName = (String) attributes.get("sn").get();
+		if (surName != null)
+			userDTO.setSurName(surName);
+		String homeDirectory = (String) attributes.get("homeDirectory").get();
+		if (homeDirectory != null)
+			userDTO.setHomeDirectory(homeDirectory);
 		Attribute description = attributes.get("description");
 		if (description != null)
 			userDTO.setDescription((String) description.get());
+		Attribute gidNumber = attributes.get("gidNumber");
+		if (gidNumber != null)
+			userDTO.setGidNumber(Integer.valueOf((String) gidNumber.get()));
+		Attribute uidNumber = attributes.get("uidNumber");
+		if (uidNumber != null)
+			userDTO.setUidNumber(Integer.valueOf((String) uidNumber.get()));
 		return userDTO;
 	}
 

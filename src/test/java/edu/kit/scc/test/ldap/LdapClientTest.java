@@ -36,6 +36,14 @@ public class LdapClientTest {
 
 	@Test
 	public void createLdapUserTest() {
-		ldapClient.createUser("newUser", "newUser", "newUser", "newUser");
+		String cn = "newPosixUser1";
+		String sn = "newPosixUser1";
+		String description = "new posix user";
+		String homeDirectory = "/home/newPosixUser1";
+		String uid = "newPosixUser1";
+		int uidNumber = 6001;
+		int gidNumber = 2222;
+
+		ldapClient.createUser(uid, cn, sn, uidNumber, gidNumber, homeDirectory, description);
 	}
 }

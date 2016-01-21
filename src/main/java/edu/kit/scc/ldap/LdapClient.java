@@ -89,6 +89,25 @@ public class LdapClient {
 	private LdapGroupDAO ldapGroup;
 
 	/**
+	 * Gets the user specified from the LDAP server.
+	 * 
+	 * @param uid
+	 *            the user's uid
+	 * @return a {@link UserDTO} with the LDAP user information
+	 */
+	public UserDTO getLdapUser(String uid) {
+		List<UserDTO> userList = ldapUser.getUserDetails(uid);
+		UserDTO user = null;
+
+		if (!userList.isEmpty()) {
+			user = userList.get(0);
+			log.info(user.toString());
+		}
+
+		return user;
+	}
+
+	/**
 	 * Gets all users from the LDAP server.
 	 * 
 	 * @return a {@link List<UserDTO>} with the LDAP user information
@@ -123,15 +142,25 @@ public class LdapClient {
 	 *            the user's common name
 	 * @param sn
 	 *            the user's sure name
+	 * @param uidNumber
+	 *            the user's uid number
+	 * @param gidNumber
+	 *            the user's gid number
+	 * @param homeDirectory
+	 *            the user's home directory
 	 * @param description
 	 *            the user's description
 	 */
-	public void createUser(String uid, String cn, String sn, String description) {
+	public void createUser(String uid, String cn, String sn, int uidNumber, int gidNumber, String homeDirectory,
+			String description) {
 		UserDTO user = new UserDTO();
 		user.setCommonName(cn);
 		user.setDescription(description);
-		user.setLastName(sn);
+		user.setSurName(sn);
 		user.setUid(uid);
+		user.setGidNumber(gidNumber);
+		user.setUidNumber(uidNumber);
+		user.setHomeDirectory(homeDirectory);
 		ldapUser.insertUser(user);
 	}
 }

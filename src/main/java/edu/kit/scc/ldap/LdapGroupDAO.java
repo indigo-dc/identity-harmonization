@@ -48,9 +48,9 @@ public class LdapGroupDAO implements GroupDAO {
 	}
 
 	@Override
-	public List<GroupDTO> getGroupDetails(String commonName) {
+	public List<GroupDTO> getGroupDetails(int gidNumber) {
 		AndFilter andFilter = new AndFilter();
-		andFilter.and(new EqualsFilter("objectclass", "posixGroup")).and(new EqualsFilter("cn", commonName));
+		andFilter.and(new EqualsFilter("objectclass", "posixGroup")).and(new EqualsFilter("gidNumber", gidNumber));
 		log.debug("LDAP query {}", andFilter.encode());
 
 		return ldapTemplate.search(groupBase, andFilter.encode(), new GroupAttributeMapper());

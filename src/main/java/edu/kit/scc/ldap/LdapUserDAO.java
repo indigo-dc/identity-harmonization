@@ -44,13 +44,13 @@ public class LdapUserDAO implements UserDAO {
 
 	@Override
 	public List<UserDTO> getAllUsers() {
-		return ldapTemplate.search(userBase, "(objectclass=inetOrgPerson)", new UserAttributeMapper());
+		return ldapTemplate.search(userBase, "(objectclass=posixAccount)", new UserAttributeMapper());
 	}
 
 	@Override
 	public List<UserDTO> getUserDetails(String uid) {
 		AndFilter andFilter = new AndFilter();
-		andFilter.and(new EqualsFilter("objectclass", "inetOrgPerson")).and(new EqualsFilter("uid", uid));
+		andFilter.and(new EqualsFilter("objectclass", "posixAccount")).and(new EqualsFilter("uid", uid));
 		log.debug("LDAP query {}", andFilter.encode());
 
 		return ldapTemplate.search("", andFilter.encode(), new UserAttributeMapper());
@@ -60,13 +60,17 @@ public class LdapUserDAO implements UserDAO {
 	public void insertUser(UserDTO userDTO) {
 		BasicAttribute personBasicAttribute = new BasicAttribute("objectclass");
 		personBasicAttribute.add("inetOrgPerson");
+		personBasicAttribute.add("posixAccount");
 
 		Attributes personAttributes = new BasicAttributes();
 		personAttributes.put(personBasicAttribute);
 		personAttributes.put("cn", userDTO.getCommonName());
-		personAttributes.put("sn", userDTO.getLastName());
+		personAttributes.put("sn", userDTO.getSurName());
 		personAttributes.put("description", userDTO.getDescription());
 		personAttributes.put("uid", userDTO.getUid());
+		personAttributes.put("uidNumber", String.valueOf(userDTO.getUidNumber()));
+		personAttributes.put("gidNumber", String.valueOf(userDTO.getGidNumber()));
+		personAttributes.put("homeDirectory", userDTO.getHomeDirectory());
 
 		LdapName newUserDN = LdapUtils.emptyLdapName();
 		try {
@@ -84,13 +88,16 @@ public class LdapUserDAO implements UserDAO {
 	public void updateUser(UserDTO userDTO) {
 		BasicAttribute personBasicAttribute = new BasicAttribute("objectclass");
 		personBasicAttribute.add("inetOrgPerson");
+		personBasicAttribute.add("posixAccount");
 
 		Attributes personAttributes = new BasicAttributes();
-		personAttributes.put(personBasicAttribute);
 		personAttributes.put("cn", userDTO.getCommonName());
-		personAttributes.put("sn", userDTO.getLastName());
+		personAttributes.put("sn", userDTO.getSurName());
 		personAttributes.put("description", userDTO.getDescription());
 		personAttributes.put("uid", userDTO.getUid());
+		personAttributes.put("uidNumber", String.valueOf(userDTO.getUidNumber()));
+		personAttributes.put("gidNumber", String.valueOf(userDTO.getGidNumber()));
+		personAttributes.put("homeDirectory", userDTO.getHomeDirectory());
 
 		LdapName newUserDN = LdapUtils.emptyLdapName();
 		try {

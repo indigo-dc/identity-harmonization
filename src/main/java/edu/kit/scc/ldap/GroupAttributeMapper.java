@@ -27,6 +27,7 @@ public class GroupAttributeMapper implements AttributesMapper<GroupDTO> {
 		Attribute gidNumber = attributes.get("gidNumber");
 		if (gidNumber != null)
 			groupDTO.setGidNumber(Integer.valueOf((String) gidNumber.get()));
+
 		return groupDTO;
 	}
 

@@ -10,10 +10,13 @@ package edu.kit.scc.dto;
 
 public class UserDTO {
 
-	String commonName;
-	String lastName;
-	String description;
 	String uid;
+	String commonName;
+	String surName;
+	String homeDirectory;
+	String description;
+	int uidNumber;
+	int gidNumber;
 
 	public String getUid() {
 		return uid;
@@ -31,6 +34,22 @@ public class UserDTO {
 		this.commonName = commonName;
 	}
 
+	public String getSurName() {
+		return surName;
+	}
+
+	public void setSurName(String surName) {
+		this.surName = surName;
+	}
+
+	public String getHomeDirectory() {
+		return homeDirectory;
+	}
+
+	public void setHomeDirectory(String homeDirectory) {
+		this.homeDirectory = homeDirectory;
+	}
+
 	public String getDescription() {
 		return description;
 	}
@@ -39,19 +58,29 @@ public class UserDTO {
 		this.description = description;
 	}
 
-	public String getLastName() {
-		return lastName;
+	public int getUidNumber() {
+		return uidNumber;
 	}
 
-	public void setLastName(String lastName) {
-		this.lastName = lastName;
+	public void setUidNumber(int uidNumber) {
+		this.uidNumber = uidNumber;
+	}
+
+	public int getGidNumber() {
+		return gidNumber;
+	}
+
+	public void setGidNumber(int gidNumber) {
+		this.gidNumber = gidNumber;
 	}
 
 	@Override
 	public String toString() {
-		return "UserDTO [" + (commonName != null ? "commonName=" + commonName + ", " : "")
-				+ (lastName != null ? "lastName=" + lastName + ", " : "")
-				+ (description != null ? "description=" + description + ", " : "") + (uid != null ? "uid=" + uid : "")
-				+ "]";
+		return "UserDTO [" + (uid != null ? "uid=" + uid + ", " : "")
+				+ (commonName != null ? "commonName=" + commonName + ", " : "")
+				+ (surName != null ? "surName=" + surName + ", " : "")
+				+ (homeDirectory != null ? "homeDirectory=" + homeDirectory + ", " : "")
+				+ (description != null ? "description=" + description + ", " : "") + "uidNumber=" + uidNumber
+				+ ", gidNumber=" + gidNumber + "]";
 	}
 }

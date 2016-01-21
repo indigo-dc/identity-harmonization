@@ -15,7 +15,7 @@ import edu.kit.scc.dto.GroupDTO;
 public interface GroupDAO {
 	public List<GroupDTO> getAllGroups();
 
-	public List<GroupDTO> getGroupDetails(String commonName);
+	public List<GroupDTO> getGroupDetails(int gidNumber);
 
 	public void insertGroup(GroupDTO groupDTO);
 

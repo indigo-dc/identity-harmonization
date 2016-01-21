@@ -9,8 +9,12 @@
 package edu.kit.scc;
 
 import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.codec.binary.Base64;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,15 +26,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.openid.connect.sdk.token.OIDCTokens;
 
+import edu.kit.scc.dto.GroupDTO;
+import edu.kit.scc.dto.UserDTO;
 import edu.kit.scc.http.HttpClient;
 import edu.kit.scc.http.HttpResponse;
 import edu.kit.scc.ldap.LdapClient;
@@ -64,13 +69,6 @@ public class RestServiceController {
 	@Autowired
 	private LdapClient ldapClient;
 
-	@RequestMapping(path = "/oauth2")
-	@ResponseBody
-	public String oauth2Authentication(@RequestParam(value = "code") String code) {
-		log.debug(code);
-		return code;
-	}
-
 	// expected body e.g.
 	// password=password
 	// password=https%3A%2F%2F512eebd9%3Fk%3D49806e48a5cd2941604eb9dfe321c3bc
@@ -87,43 +85,93 @@ public class RestServiceController {
 			throw new UnauthorizedException();
 		}
 
-		log.debug(body);
+		log.debug("Request body {}", body);
 
 		// REG-APP
-		HttpResponse response = httpClient.makeHttpPostRequest(restUser, restPassword, body, serviceUrl + regId);
+		log.debug("Try reg-app authentication");
+		String regAppUrl = serviceUrl.replaceAll("/$", "");
+		regAppUrl += "/" + regId;
+		HttpResponse response = httpClient.makeHttpPostRequest(restUser, restPassword, body, regAppUrl);
 		if (response != null && response.statusCode == 200) {
 			log.debug("Reg-app authentication success");
+			// TODO harmonize
 			return;
 		}
 
 		// OIDC
-		JSONObject oidcJson = new JSONObject();
+		log.debug("Try OIDC authentication");
+		OIDCTokens tokens = null;
 		try {
 			String token = body.split("=")[1];
 			// oidcJson = oidcClient.requestUserInfo(token);
-			OIDCTokens tokens = oidcClient.requestTokens(token);
-			JWT jwt = tokens.getIDToken();
-			JWTClaimsSet claimsSet = jwt.getJWTClaimsSet();
-			log.debug(claimsSet.toJSONObject().toJSONString());
-
+			tokens = oidcClient.requestTokens(token);
 		} catch (ArrayIndexOutOfBoundsException e) {
+			log.error(e.getMessage());
 			throw new UnauthorizedException();
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 
-		if (oidcJson != null && !oidcJson.isNull("error")) {
-			throw new UnauthorizedException(oidcJson.optString("error_description"));
+		String subject = null;
+		if (tokens != null) {
+			try {
+				JWT jwt = tokens.getIDToken();
+				JWTClaimsSet claimsSet = jwt.getJWTClaimsSet();
+				log.debug(claimsSet.toJSONObject().toJSONString());
+
+				AccessToken accessToken = tokens.getAccessToken();
+				oidcClient.requestUserInfo(accessToken.getValue());
+
+				subject = claimsSet.getSubject();
+				log.debug("OIDC authentication success");
+			} catch (ParseException e) {
+				log.error(e.getMessage());
+				throw new UnauthorizedException();
+			}
 		}
+
+		UserDTO user = new UserDTO();
+		List<GroupDTO> groups = new ArrayList<GroupDTO>();
 
 		// SCIM
-		String name = oidcJson.optString("name");
-		JSONObject scimJson = scimClient.getUser(name);
+		// we are looking for "roles" in the SCIM response, representing the
+		// user's groups, and the user information itself
+		log.debug("Try to get SCIM user information");
+		if (subject != null) {
+			JSONObject userJson = scimClient.getUser(subject);
+			if (userJson != null) {
+				try {
+					JSONArray resources = userJson.getJSONArray("Resources");
+					JSONObject userResource = resources.getJSONObject(0);
 
-		// we are looking for "roles" in the SCIM response and sync with LDAP
+					String userName = userResource.getString("userName");
+					user.setUid(userName);
 
-		// if nothing succeeded, fail
+					JSONObject names = userResource.getJSONObject("name");
+					user.setCommonName(names.getString("givenName"));
+					user.setSurName(names.getString("familyName"));
+
+					user.setDescription(userResource.getString("id"));
+
+					log.debug(user.toString());
+
+					JSONArray roles = userResource.getJSONArray("groups");
+					for (int i = 0; i < roles.length(); i++) {
+						JSONObject role = roles.getJSONObject(i);
+
+						GroupDTO group = new GroupDTO();
+						group.setCommonName(role.getString("display"));
+						groups.add(group);
+
+						log.debug(group.toString());
+					}
+				} catch (JSONException e) {
+					// no additional user information
+					log.error(e.getMessage());
+				}
+			}
+			UserDTO ldapUser = ldapClient.getLdapUser(user.getUid());
+		}
+
+		// if nothing succeeded, fail ... gracefully
 		throw new UnauthorizedException();
 	}
 
