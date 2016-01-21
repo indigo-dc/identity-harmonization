@@ -22,6 +22,12 @@ import org.springframework.stereotype.Component;
 import edu.kit.scc.dto.GroupDTO;
 import edu.kit.scc.dto.UserDTO;
 
+/**
+ * LDAP client implementation.
+ * 
+ * @author benjamin
+ *
+ */
 @Component
 public class LdapClient {
 
@@ -82,21 +88,29 @@ public class LdapClient {
 	@Autowired
 	private LdapGroupDAO ldapGroup;
 
-	public void getLdapUsers() {
+	/**
+	 * Gets all users from the LDAP server.
+	 * 
+	 * @return a {@link List<UserDTO>} with the LDAP user information
+	 */
+	public List<UserDTO> getLdapUsers() {
 		List<UserDTO> userList = ldapUser.getAllUsers();
 		for (int i = 0; i < userList.size(); i++)
 			log.info("User name {}", ((UserDTO) userList.get(i)).getCommonName());
-		List<UserDTO> userDetails = ldapUser.getUserDetails("jsmith1");
-		for (int i = 0; i < userDetails.size(); i++)
-			log.info("Description {}", ((UserDTO) userDetails.get(i)).getDescription());
+
+		return userList;
 	}
 
-	public void getLdapGroups() {
+	/**
+	 * Gets all groups from the LDAP server.
+	 * 
+	 * @return a {@link List<GroupDTO>} with the LDAP group information
+	 */
+	public List<GroupDTO> getLdapGroups() {
 		List<GroupDTO> groupList = ldapGroup.getAllGroups();
 		for (int i = 0; i < groupList.size(); i++)
 			log.info("Gropu name {}", ((GroupDTO) groupList.get(i)).getCommonName());
-		List<GroupDTO> groupDetails = ldapGroup.getGroupDetails("user");
-		for (int i = 0; i < groupDetails.size(); i++)
-			log.info("GidNumber {}", ((GroupDTO) groupDetails.get(i)).getGidNumber());
+
+		return groupList;
 	}
 }

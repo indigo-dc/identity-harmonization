@@ -26,8 +26,15 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
+/**
+ * Custom SSL context generation class.
+ * 
+ * @author benjamin
+ *
+ */
 public final class CustomSSLContext {
 
+	// example cert
 	@SuppressWarnings("unused")
 	private static final String cert = "-----BEGIN CERTIFICATE-----\n"
 			+ "MIICNTCCAZ6gAwIBAgIES343gjANBgkqhkiG9w0BAQUFADBVMQswCQYDVQQGEwJV"
@@ -46,6 +53,13 @@ public final class CustomSSLContext {
 	private CustomSSLContext() {
 	}
 
+	/**
+	 * Initializes a SSL context with the given certificate.
+	 * 
+	 * @param cert
+	 *            the X.509 certificate for the context
+	 * @return a {@link SSLContext}
+	 */
 	public static SSLContext initSslContextWithCertificate(String cert) {
 
 		SSLContext sslContext = null;
@@ -92,6 +106,11 @@ public final class CustomSSLContext {
 		return sslContext;
 	}
 
+	/**
+	 * Initializes an empty SSL context.
+	 * 
+	 * @return a {@link SSLContext}
+	 */
 	public static SSLContext initEmptySslContext() {
 		SSLContext sslContext = null;
 		try {

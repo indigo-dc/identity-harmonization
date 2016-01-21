@@ -83,6 +83,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 
+/**
+ * SAML client implementation.
+ * 
+ * @author benjamin
+ *
+ */
 public class SamlClient {
 
 	private static final Logger log = LoggerFactory.getLogger(SamlClient.class);

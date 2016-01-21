@@ -25,8 +25,12 @@ public class LdapClientTests {
 	private LdapClient ldapClient;
 
 	@Test
-	public void ldapClientTest() {
+	public void getLdapGroupsTest() {
 		ldapClient.getLdapGroups();
+	}
+
+	@Test
+	public void getLdapUsersTest() {
 		ldapClient.getLdapUsers();
 	}
 }

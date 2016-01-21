@@ -19,6 +19,12 @@ import javax.net.ssl.SSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Custom URL connection generation class.
+ * 
+ * @author benjamin
+ *
+ */
 public final class CustomUrlConnection {
 
 	private static final Logger log = LoggerFactory.getLogger(CustomUrlConnection.class);
@@ -26,6 +32,15 @@ public final class CustomUrlConnection {
 	private CustomUrlConnection() {
 	}
 
+	/**
+	 * Initializes a HTTPS URL connection.
+	 * 
+	 * @param checkCertificate
+	 *            enables certificate check
+	 * @param url
+	 *            the URL to connect to
+	 * @return a {@link HttpsURLConnection}
+	 */
 	public static HttpsURLConnection getSecureHttpConnection(boolean checkCertificate, String url) {
 		HttpsURLConnection urlConnection = null;
 		try {
@@ -56,6 +71,13 @@ public final class CustomUrlConnection {
 		return urlConnection;
 	}
 
+	/**
+	 * Initializes a HTTP URL connection.
+	 * 
+	 * @param url
+	 *            the URL to connect to
+	 * @return a {@link HttpURLConnection}
+	 */
 	public static HttpURLConnection getHttpConnection(String url) {
 		HttpURLConnection urlConnection = null;
 		try {
