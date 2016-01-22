@@ -15,11 +15,13 @@ import edu.kit.scc.dto.GroupDTO;
 public interface GroupDAO {
 	public List<GroupDTO> getAllGroups();
 
-	public List<GroupDTO> getGroupDetails(int gidNumber);
+	public List<GroupDTO> getGroupDetails(String commonName);
 
 	public void insertGroup(GroupDTO groupDTO);
 
 	public void updateGroup(GroupDTO groupDTO);
 
 	public void deleteGroup(GroupDTO groupDTO);
+
+	public void addMember(GroupDTO groupDTO, String memberUid);
 }

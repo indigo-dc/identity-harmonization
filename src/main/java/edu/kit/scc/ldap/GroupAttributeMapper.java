@@ -8,6 +8,8 @@
  */
 package edu.kit.scc.ldap;
 
+import java.util.ArrayList;
+
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
@@ -27,7 +29,12 @@ public class GroupAttributeMapper implements AttributesMapper<GroupDTO> {
 		Attribute gidNumber = attributes.get("gidNumber");
 		if (gidNumber != null)
 			groupDTO.setGidNumber(Integer.valueOf((String) gidNumber.get()));
-
+		Attribute memberUids = attributes.get("memberUid");
+		if (memberUids != null) {
+			groupDTO.setMemberUids(new ArrayList<String>());
+			for (int i = 0; i < memberUids.size(); i++)
+				groupDTO.getMemberUids().add((String) memberUids.get(i));
+		}
 		return groupDTO;
 	}
 

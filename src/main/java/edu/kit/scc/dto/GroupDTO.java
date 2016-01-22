@@ -8,10 +8,13 @@
  */
 package edu.kit.scc.dto;
 
+import java.util.List;
+
 public class GroupDTO {
 
 	String commonName;
 	int gidNumber;
+	List<String> memberUids;
 
 	public String getCommonName() {
 		return commonName;
@@ -29,9 +32,17 @@ public class GroupDTO {
 		this.gidNumber = gidNumber;
 	}
 
+	public List<String> getMemberUids() {
+		return memberUids;
+	}
+
+	public void setMemberUids(List<String> memberUids) {
+		this.memberUids = memberUids;
+	}
+
 	@Override
 	public String toString() {
 		return "GroupDTO [" + (commonName != null ? "commonName=" + commonName + ", " : "") + "gidNumber=" + gidNumber
-				+ "]";
+				+ ", " + (memberUids != null ? "memberUids=" + memberUids : "") + "]";
 	}
 }

@@ -14,6 +14,8 @@ import javax.naming.InvalidNameException;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.BasicAttribute;
 import javax.naming.directory.BasicAttributes;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.ModificationItem;
 import javax.naming.ldap.LdapName;
 
 import org.slf4j.Logger;
@@ -48,12 +50,12 @@ public class LdapGroupDAO implements GroupDAO {
 	}
 
 	@Override
-	public List<GroupDTO> getGroupDetails(int gidNumber) {
+	public List<GroupDTO> getGroupDetails(String commonName) {
 		AndFilter andFilter = new AndFilter();
-		andFilter.and(new EqualsFilter("objectclass", "posixGroup")).and(new EqualsFilter("gidNumber", gidNumber));
+		andFilter.and(new EqualsFilter("objectclass", "posixGroup")).and(new EqualsFilter("cn", commonName));
 		log.debug("LDAP query {}", andFilter.encode());
 
-		return ldapTemplate.search(groupBase, andFilter.encode(), new GroupAttributeMapper());
+		return ldapTemplate.search("", andFilter.encode(), new GroupAttributeMapper());
 	}
 
 	@Override
@@ -64,7 +66,7 @@ public class LdapGroupDAO implements GroupDAO {
 		Attributes posixGroupAttributes = new BasicAttributes();
 		posixGroupAttributes.put(posixGroupBasicAttribute);
 		posixGroupAttributes.put("cn", groupDTO.getCommonName());
-		posixGroupAttributes.put("gidNumber", groupDTO.getGidNumber());
+		posixGroupAttributes.put("gidNumber", String.valueOf(groupDTO.getGidNumber()));
 
 		LdapName newGroupDN = LdapUtils.emptyLdapName();
 		try {
@@ -85,14 +87,14 @@ public class LdapGroupDAO implements GroupDAO {
 		Attributes posixGroupAttributes = new BasicAttributes();
 		posixGroupAttributes.put(posixGroupBasicAttribute);
 		posixGroupAttributes.put("cn", groupDTO.getCommonName());
-		posixGroupAttributes.put("gidNumber", groupDTO.getGidNumber());
+		posixGroupAttributes.put("gidNumber", String.valueOf(groupDTO.getGidNumber()));
 
-		LdapName newGroupDN = LdapUtils.emptyLdapName();
+		LdapName groupDN = LdapUtils.emptyLdapName();
 		try {
-			newGroupDN = new LdapName(groupBase);
-			newGroupDN.add("cn=" + groupDTO.getCommonName());
-			log.debug(newGroupDN.toString());
-			ldapTemplate.bind(newGroupDN, null, posixGroupAttributes);
+			groupDN = new LdapName(groupBase);
+			groupDN.add("cn=" + groupDTO.getCommonName());
+			log.debug(groupDN.toString());
+			ldapTemplate.bind(groupDN, null, posixGroupAttributes);
 		} catch (InvalidNameException e) {
 			e.printStackTrace();
 		}
@@ -100,12 +102,27 @@ public class LdapGroupDAO implements GroupDAO {
 
 	@Override
 	public void deleteGroup(GroupDTO groupDTO) {
-		LdapName newGroupDN = LdapUtils.emptyLdapName();
+		LdapName groupDN = LdapUtils.emptyLdapName();
 		try {
-			newGroupDN = new LdapName(groupBase);
-			newGroupDN.add("cn=" + groupDTO.getCommonName());
-			log.debug(newGroupDN.toString());
-			ldapTemplate.unbind(newGroupDN);
+			groupDN = new LdapName(groupBase);
+			groupDN.add("cn=" + groupDTO.getCommonName());
+			log.debug(groupDN.toString());
+			ldapTemplate.unbind(groupDN);
+		} catch (InvalidNameException e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public void addMember(GroupDTO groupDTO, String memberUid) {
+		ModificationItem[] modificationItems = new ModificationItem[] {
+				new ModificationItem(DirContext.ADD_ATTRIBUTE, new BasicAttribute("memberUid", memberUid)) };
+		LdapName groupDN = LdapUtils.emptyLdapName();
+		try {
+			groupDN = new LdapName(groupBase);
+			groupDN.add("cn=" + groupDTO.getCommonName());
+			log.debug(groupDN.toString());
+			ldapTemplate.modifyAttributes(groupDN, modificationItems);
 		} catch (InvalidNameException e) {
 			e.printStackTrace();
 		}

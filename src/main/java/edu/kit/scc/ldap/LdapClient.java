@@ -99,12 +99,29 @@ public class LdapClient {
 		List<UserDTO> userList = ldapUser.getUserDetails(uid);
 		UserDTO user = null;
 
-		if (!userList.isEmpty()) {
+		if (userList != null && !userList.isEmpty()) {
 			user = userList.get(0);
-			log.info(user.toString());
+			log.debug(user.toString());
 		}
-
 		return user;
+	}
+
+	/**
+	 * Gets the group specified from the LDAP server.
+	 * 
+	 * @param cn
+	 *            the group's common name
+	 * @return a {@link GroupDTO} with the LDAP group information
+	 */
+	public GroupDTO getLdapGroup(String cn) {
+		List<GroupDTO> groupList = ldapGroup.getGroupDetails(cn);
+		GroupDTO group = null;
+
+		if (groupList != null && !groupList.isEmpty()) {
+			group = groupList.get(0);
+			log.debug(group.toString());
+		}
+		return group;
 	}
 
 	/**
@@ -115,7 +132,7 @@ public class LdapClient {
 	public List<UserDTO> getLdapUsers() {
 		List<UserDTO> userList = ldapUser.getAllUsers();
 		for (int i = 0; i < userList.size(); i++)
-			log.info("User name {}", ((UserDTO) userList.get(i)).getCommonName());
+			log.debug("User {}", ((UserDTO) userList.get(i)).toString());
 
 		return userList;
 	}
@@ -128,13 +145,13 @@ public class LdapClient {
 	public List<GroupDTO> getLdapGroups() {
 		List<GroupDTO> groupList = ldapGroup.getAllGroups();
 		for (int i = 0; i < groupList.size(); i++)
-			log.info("Gropu name {}", ((GroupDTO) groupList.get(i)).getCommonName());
+			log.debug("Group {}", ((GroupDTO) groupList.get(i)).toString());
 
 		return groupList;
 	}
 
 	/**
-	 * Creates a new LDAP user.
+	 * Creates a new LDAP POSIX user.
 	 * 
 	 * @param uid
 	 *            the user's uid
@@ -162,5 +179,96 @@ public class LdapClient {
 		user.setUidNumber(uidNumber);
 		user.setHomeDirectory(homeDirectory);
 		ldapUser.insertUser(user);
+	}
+
+	/**
+	 * Updates a specific LDAP POSIX user.
+	 * 
+	 * @param uid
+	 *            the user's uid
+	 * @param cn
+	 *            the user's common name
+	 * @param sn
+	 *            the user's sure name
+	 * @param uidNumber
+	 *            the user's uid number
+	 * @param gidNumber
+	 *            the user's gid number
+	 * @param homeDirectory
+	 *            the user's home directory
+	 * @param description
+	 *            the user's description
+	 */
+	public void updateUser(String uid, String cn, String sn, int uidNumber, int gidNumber, String homeDirectory,
+			String description) {
+		UserDTO user = new UserDTO();
+		user.setCommonName(cn);
+		user.setDescription(description);
+		user.setSurName(sn);
+		user.setUid(uid);
+		user.setGidNumber(gidNumber);
+		user.setUidNumber(uidNumber);
+		user.setHomeDirectory(homeDirectory);
+		ldapUser.updateUser(user);
+	}
+
+	/**
+	 * Deletes a specific LDAP POSIX user.
+	 * 
+	 * @param uid
+	 *            the user's uid
+	 */
+	public void deleteUser(String uid) {
+		UserDTO user = new UserDTO();
+		user.setUid(uid);
+		ldapUser.deleteUser(user);
+	}
+
+	/**
+	 * Creates a new LDAP POSIX group.
+	 * 
+	 * @param cn
+	 *            the group's common name
+	 * @param gidNumber
+	 *            the group's gid number
+	 */
+	public void createGroup(String cn, int gidNumber) {
+		GroupDTO group = new GroupDTO();
+		group.setCommonName(cn);
+		group.setGidNumber(gidNumber);
+		ldapGroup.insertGroup(group);
+	}
+
+	/**
+	 * Updates a specific LDAP POSIX group.
+	 * 
+	 * @param cn
+	 *            the group's common name
+	 * @param gidNumber
+	 *            the group's gid number
+	 */
+	public void updateGroup(String cn, int gidNumber) {
+		GroupDTO group = new GroupDTO();
+		group.setCommonName(cn);
+		group.setGidNumber(gidNumber);
+		ldapGroup.updateGroup(group);
+	}
+
+	/**
+	 * Deletes a specific LDAP POSIX group.
+	 * 
+	 * @param cn
+	 *            the group's common name
+	 */
+	public void deleteGroup(String cn) {
+		GroupDTO group = new GroupDTO();
+		group.setCommonName(cn);
+		ldapGroup.deleteGroup(group);
+	}
+
+	public void addGroupMember(String cn, String memberUid) {
+		GroupDTO group = new GroupDTO();
+		group.setCommonName(cn);
+		ldapGroup.addMember(group, memberUid);
 	}
 }

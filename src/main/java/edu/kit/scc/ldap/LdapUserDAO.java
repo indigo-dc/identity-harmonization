@@ -79,7 +79,6 @@ public class LdapUserDAO implements UserDAO {
 			log.debug(newUserDN.toString());
 			ldapTemplate.bind(newUserDN, null, personAttributes);
 		} catch (InvalidNameException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -91,6 +90,7 @@ public class LdapUserDAO implements UserDAO {
 		personBasicAttribute.add("posixAccount");
 
 		Attributes personAttributes = new BasicAttributes();
+		personAttributes.put(personBasicAttribute);
 		personAttributes.put("cn", userDTO.getCommonName());
 		personAttributes.put("sn", userDTO.getSurName());
 		personAttributes.put("description", userDTO.getDescription());
@@ -99,28 +99,26 @@ public class LdapUserDAO implements UserDAO {
 		personAttributes.put("gidNumber", String.valueOf(userDTO.getGidNumber()));
 		personAttributes.put("homeDirectory", userDTO.getHomeDirectory());
 
-		LdapName newUserDN = LdapUtils.emptyLdapName();
+		LdapName userDN = LdapUtils.emptyLdapName();
 		try {
-			newUserDN = new LdapName(userBase);
-			newUserDN.add("uid=" + userDTO.getUid());
-			log.debug(newUserDN.toString());
-			ldapTemplate.rebind(newUserDN, null, personAttributes);
+			userDN = new LdapName(userBase);
+			userDN.add("uid=" + userDTO.getUid());
+			log.debug(userDN.toString());
+			ldapTemplate.rebind(userDN, null, personAttributes);
 		} catch (InvalidNameException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 
 	@Override
 	public void deleteUser(UserDTO userDTO) {
-		LdapName newUserDN = LdapUtils.emptyLdapName();
+		LdapName userDN = LdapUtils.emptyLdapName();
 		try {
-			newUserDN = new LdapName(userBase);
-			newUserDN.add("uid=" + userDTO.getUid());
-			log.debug(newUserDN.toString());
-			ldapTemplate.unbind(newUserDN);
+			userDN = new LdapName(userBase);
+			userDN.add("uid=" + userDTO.getUid());
+			log.debug(userDN.toString());
+			ldapTemplate.unbind(userDN);
 		} catch (InvalidNameException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
