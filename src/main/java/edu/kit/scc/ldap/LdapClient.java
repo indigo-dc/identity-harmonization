@@ -8,7 +8,9 @@
  */
 package edu.kit.scc.ldap;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -270,5 +272,26 @@ public class LdapClient {
 		GroupDTO group = new GroupDTO();
 		group.setCommonName(cn);
 		ldapGroup.addMember(group, memberUid);
+	}
+
+	/**
+	 * Generates a non-conflicting group id.
+	 * 
+	 * @return a new int gidNumber
+	 */
+	public int generateGroupId() {
+		int max = 99999;
+		int min = 10000;
+		Random rand = new Random();
+		ArrayList<Integer> existingGidNumbers = new ArrayList<Integer>();
+		List<GroupDTO> groups = ldapGroup.getAllGroups();
+		for (GroupDTO group : groups)
+			existingGidNumbers.add(group.getGidNumber());
+
+		int randomInt = rand.nextInt((max - min) + 1) + min;
+		while (existingGidNumbers.contains(randomInt))
+			randomInt = rand.nextInt((max - min) + 1) + min;
+
+		return randomInt;
 	}
 }

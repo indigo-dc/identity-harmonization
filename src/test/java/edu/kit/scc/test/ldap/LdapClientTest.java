@@ -8,9 +8,7 @@
  */
 package edu.kit.scc.test.ldap;
 
-import static org.junit.Assert.*;
-
-import java.util.ArrayList;
+import static org.junit.Assert.assertNotNull;
 
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -111,4 +109,8 @@ public class LdapClientTest {
 		ldapClient.getLdapUsers();
 	}
 
+	@Test
+	public void getNewGidNumber() {
+		log.debug("{}", ldapClient.generateGroupId());
+	}
 }

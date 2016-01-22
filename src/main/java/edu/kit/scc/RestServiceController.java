@@ -9,8 +9,6 @@
 package edu.kit.scc;
 
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.commons.codec.binary.Base64;
 import org.json.JSONArray;
@@ -95,6 +93,7 @@ public class RestServiceController {
 		if (response != null && response.statusCode == 200) {
 			log.debug("Reg-app authentication success");
 			// TODO harmonize
+			// harmonizeIdentities(userName);
 			return;
 		}
 
@@ -110,7 +109,6 @@ public class RestServiceController {
 			throw new UnauthorizedException();
 		}
 
-		String subject = null;
 		if (tokens != null) {
 			try {
 				JWT jwt = tokens.getIDToken();
@@ -120,59 +118,64 @@ public class RestServiceController {
 				AccessToken accessToken = tokens.getAccessToken();
 				oidcClient.requestUserInfo(accessToken.getValue());
 
-				subject = claimsSet.getSubject();
+				String subject = claimsSet.getSubject();
 				log.debug("OIDC authentication success");
+				// TODO harmonize
+				harmonizeIdentities(subject);
+				return;
 			} catch (ParseException e) {
 				log.error(e.getMessage());
 				throw new UnauthorizedException();
 			}
 		}
 
-		UserDTO user = new UserDTO();
-		List<GroupDTO> groups = new ArrayList<GroupDTO>();
-
-		// SCIM
-		// we are looking for "roles" in the SCIM response, representing the
-		// user's groups, and the user information itself
-		log.debug("Try to get SCIM user information");
-		if (subject != null) {
-			JSONObject userJson = scimClient.getUser(subject);
-			if (userJson != null) {
-				try {
-					JSONArray resources = userJson.getJSONArray("Resources");
-					JSONObject userResource = resources.getJSONObject(0);
-
-					String userName = userResource.getString("userName");
-					user.setUid(userName);
-
-					JSONObject names = userResource.getJSONObject("name");
-					user.setCommonName(names.getString("givenName"));
-					user.setSurName(names.getString("familyName"));
-
-					user.setDescription(userResource.getString("id"));
-
-					log.debug(user.toString());
-
-					JSONArray roles = userResource.getJSONArray("groups");
-					for (int i = 0; i < roles.length(); i++) {
-						JSONObject role = roles.getJSONObject(i);
-
-						GroupDTO group = new GroupDTO();
-						group.setCommonName(role.getString("display"));
-						groups.add(group);
-
-						log.debug(group.toString());
-					}
-				} catch (JSONException e) {
-					// no additional user information
-					log.error(e.getMessage());
-				}
-			}
-			UserDTO ldapUser = ldapClient.getLdapUser(user.getUid());
-		}
-
 		// if nothing succeeded, fail ... gracefully
 		throw new UnauthorizedException();
+	}
+
+	private void harmonizeIdentities(String subject) {
+		// SCIM
+		// we are looking for groups in the SCIM response
+		log.debug("Try to get SCIM user information");
+		JSONObject userJson = scimClient.getUser(subject);
+		if (userJson != null) {
+			try {
+				JSONArray resources = userJson.getJSONArray("Resources");
+				JSONObject userResource = resources.getJSONObject(0);
+
+				String userName = userResource.getString("userName");
+				JSONObject names = userResource.getJSONObject("name");
+
+				UserDTO existingUser = ldapClient.getLdapUser(userName);
+
+				// there should always be an existing user in the LDAP tree
+				if (existingUser != null)
+					log.debug(existingUser.toString());
+				else {
+					throw new UnauthorizedException("no existing LDAP user");
+				}
+
+				JSONArray roles = userResource.getJSONArray("groups");
+				for (int i = 0; i < roles.length(); i++) {
+					JSONObject role = roles.getJSONObject(i);
+					String cn = role.getString("display");
+					GroupDTO group = ldapClient.getLdapGroup(cn);
+
+					if (group != null) {
+						// check/add user
+						if (!group.getMemberUids().contains(userName))
+							ldapClient.addGroupMember(cn, userName);
+					} else {
+						// create new group and add user
+						ldapClient.createGroup(cn, ldapClient.generateGroupId());
+						ldapClient.addGroupMember(cn, userName);
+					}
+				}
+			} catch (JSONException e) {
+				// no additional user information
+				log.error(e.getMessage());
+			}
+		}
 	}
 
 	@ResponseStatus(value = HttpStatus.UNAUTHORIZED)
