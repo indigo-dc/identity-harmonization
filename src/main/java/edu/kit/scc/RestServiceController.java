@@ -72,7 +72,7 @@ public class RestServiceController {
 	// password=https%3A%2F%2F512eebd9%3Fk%3D49806e48a5cd2941604eb9dfe321c3bc
 	// password=3D49806e48a5cd2941604eb9dfe321c3bc
 
-	@RequestMapping(path = "/ecp/{regId}", method = RequestMethod.POST)
+	@RequestMapping(path = "/ecp/regid/{regId}", method = RequestMethod.POST)
 	public void ecpAuthentication(@PathVariable String regId, @RequestHeader("Authorization") String basicAuthorization,
 			@RequestBody String body) {
 		String encodedCredentials = basicAuthorization.split(" ")[1];
@@ -163,7 +163,7 @@ public class RestServiceController {
 
 					if (group != null) {
 						// check/add user
-						if (!group.getMemberUids().contains(userName))
+						if (group.getMemberUids() != null && !group.getMemberUids().contains(userName))
 							ldapClient.addGroupMember(cn, userName);
 					} else {
 						// create new group and add user
