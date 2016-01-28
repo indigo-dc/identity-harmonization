@@ -11,6 +11,7 @@ package edu.kit.scc.oidc;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Map.Entry;
 
 import javax.net.ssl.SSLContext;
 
@@ -80,6 +81,7 @@ public class OidcClient {
 	 *            the OAuth2 access token
 	 * @return a {@link JSONObject} with the OIDC user information
 	 */
+	@SuppressWarnings("static-access")
 	public JSONObject requestUserInfo(String accessToken) {
 		JSONObject userInfoResponse = null;
 
@@ -135,6 +137,7 @@ public class OidcClient {
 	 *            the OAuth2 authorization code
 	 * @return a {@link Tokens} bundle with all OIDC tokens
 	 */
+	@SuppressWarnings("static-access")
 	public OIDCTokens requestTokens(String authorizationCode) {
 		AuthorizationCode code = new AuthorizationCode(authorizationCode);
 
@@ -150,13 +153,29 @@ public class OidcClient {
 			ClientAuthentication clientAuthentication = new ClientSecretBasic(clientID, clientSecret);
 			AuthorizationGrant codeGrant = new AuthorizationCodeGrant(code, redirectUri);
 
+			// codeGrant.toParameters().put("client_id", this.clientId);
+			// codeGrant.toParameters().put("client_secret", this.clientSecret);
+
+			// for (Entry<String, String> entry :
+			// codeGrant.toParameters().entrySet())
+			// log.debug("{} {}", entry.getKey(), entry.getValue());
+
 			TokenRequest request = new TokenRequest(tokenEndpoint, clientAuthentication, codeGrant);
 
 			HTTPResponse httpResponse = null;
 			HTTPRequest httpRequest = request.toHTTPRequest();
+			// httpRequest.setAccept("*/*");
 
 			httpRequest.setDefaultHostnameVerifier(new NullHostNameVerifier());
 			httpRequest.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
+
+			log.debug("------HTTP REQUEST DEBUG------");
+			for (Entry<String, String> e : httpRequest.getHeaders().entrySet())
+				log.debug("{} {}", e.getKey(), e.getValue());
+			log.debug("Method {}", httpRequest.getMethod());
+			log.debug("Query {}", httpRequest.getQuery());
+			log.debug("Url {}", httpRequest.getURL());
+			log.debug("------HTTP REQUEST DEBUG------");
 
 			httpResponse = httpRequest.send();
 
@@ -164,8 +183,14 @@ public class OidcClient {
 			response = OIDCTokenResponseParser.parse(httpResponse);
 
 			if (response instanceof TokenErrorResponse) {
+
+				TokenErrorResponse tokenErrorResponse = (TokenErrorResponse) response;
+
+				log.warn("ERROR {}", tokenErrorResponse.toJSONObject().toJSONString());
+
 				ErrorObject error = ((TokenErrorResponse) response).getErrorObject();
-				log.debug("ERROR " + error.getDescription());
+				log.warn("ERROR HTTP {} code {}", error.getHTTPStatusCode(), error.getCode());
+				log.warn("ERROR " + error.getDescription());
 				return null;
 			}
 

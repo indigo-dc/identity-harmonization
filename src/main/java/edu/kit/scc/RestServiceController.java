@@ -8,12 +8,10 @@
  */
 package edu.kit.scc;
 
-import java.text.ParseException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 
 import org.apache.commons.codec.binary.Base64;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,18 +25,11 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.nimbusds.jwt.JWT;
-import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.openid.connect.sdk.token.OIDCTokens;
 
-import edu.kit.scc.dto.GroupDTO;
-import edu.kit.scc.dto.UserDTO;
-import edu.kit.scc.http.HttpClient;
-import edu.kit.scc.http.HttpResponse;
-import edu.kit.scc.ldap.LdapClient;
 import edu.kit.scc.oidc.OidcClient;
-import edu.kit.scc.scim.ScimClient;
+import edu.kit.scc.regapp.RegAppClient;
+import edu.kit.scc.scim.ScimUser;
 
 @RestController
 @RequestMapping("/rest")
@@ -52,20 +43,14 @@ public class RestServiceController {
 	@Value("${regapp.servicePassword}")
 	private String restPassword;
 
-	@Value("${regapp.serviceUrl}")
-	private String serviceUrl;
-
 	@Autowired
-	private HttpClient httpClient;
+	private RegAppClient regAppClient;
 
 	@Autowired
 	private OidcClient oidcClient;
 
 	@Autowired
-	private ScimClient scimClient;
-
-	@Autowired
-	private LdapClient ldapClient;
+	private Harmonizer identityHarmonizer;
 
 	// expected body e.g.
 	// password=password
@@ -73,108 +58,58 @@ public class RestServiceController {
 	// password=3D49806e48a5cd2941604eb9dfe321c3bc
 
 	@RequestMapping(path = "/ecp/regid/{regId}", method = RequestMethod.POST)
-	public void ecpAuthentication(@PathVariable String regId, @RequestHeader("Authorization") String basicAuthorization,
-			@RequestBody String body) {
-		String encodedCredentials = basicAuthorization.split(" ")[1];
-		String[] credentials = new String(Base64.decodeBase64(encodedCredentials)).split(":");
+	public ScimUser ecpAuthentication(@PathVariable String regId,
+			@RequestHeader("Authorization") String basicAuthorization, @RequestBody String body) {
 
-		if (!credentials[0].equals(restUser) || !credentials[1].equals(restPassword)) {
-			log.error("Wrong credentials {} {}", credentials[0], credentials[1]);
-			throw new UnauthorizedException();
-		}
+		verifyAuthorization(basicAuthorization);
 
 		log.debug("Request body {}", body);
 
 		// REG-APP
 		log.debug("Try reg-app authentication");
-		String regAppUrl = serviceUrl.replaceAll("/$", "");
-		regAppUrl += "/" + regId;
-		HttpResponse response = httpClient.makeHttpPostRequest(restUser, restPassword, body, regAppUrl);
-		if (response != null && response.statusCode == 200) {
-			log.debug("Reg-app authentication success");
-			// TODO harmonize
-			// harmonizeIdentities(userName);
-			return;
-		}
+		boolean regAppSuccess = regAppClient.authenticate(regId, body);
+		log.debug("Reg-app success {}", regAppSuccess);
 
 		// OIDC
-		log.debug("Try OIDC authentication");
+		boolean oidcSuccess = false;
 		OIDCTokens tokens = null;
-		try {
-			String token = body.split("=")[1];
-			// oidcJson = oidcClient.requestUserInfo(token);
-			tokens = oidcClient.requestTokens(token);
-		} catch (ArrayIndexOutOfBoundsException e) {
-			log.error(e.getMessage());
-			throw new UnauthorizedException();
-		}
-
-		if (tokens != null) {
+		if (!regAppSuccess) {
+			log.debug("Try OIDC authentication");
 			try {
-				JWT jwt = tokens.getIDToken();
-				JWTClaimsSet claimsSet = jwt.getJWTClaimsSet();
-				log.debug(claimsSet.toJSONObject().toJSONString());
+				String token = body.split("=")[1];
+				log.debug("Got token {}", token);
+				token = URLDecoder.decode(token, "UTF-8");
+				tokens = oidcClient.requestTokens(token);
 
-				AccessToken accessToken = tokens.getAccessToken();
-				oidcClient.requestUserInfo(accessToken.getValue());
-
-				String subject = claimsSet.getSubject();
-				log.debug("OIDC authentication success");
-				// TODO harmonize
-				harmonizeIdentities(subject);
-				return;
-			} catch (ParseException e) {
+				if (tokens != null) {
+					log.debug("OIDC authentication success");
+					oidcSuccess = true;
+				}
+			} catch (ArrayIndexOutOfBoundsException e) {
+				log.error(e.getMessage());
+				throw new UnauthorizedException();
+			} catch (UnsupportedEncodingException e) {
 				log.error(e.getMessage());
 				throw new UnauthorizedException();
 			}
+		}
+		log.debug("OIDC success {}", oidcSuccess);
+
+		if (regAppSuccess || oidcSuccess) {
+			return identityHarmonizer.harmonizeIdentities(regId, tokens);
 		}
 
 		// if nothing succeeded, fail ... gracefully
 		throw new UnauthorizedException();
 	}
 
-	private void harmonizeIdentities(String subject) {
-		// SCIM
-		// we are looking for groups in the SCIM response
-		log.debug("Try to get SCIM user information");
-		JSONObject userJson = scimClient.getUser(subject);
-		if (userJson != null) {
-			try {
-				JSONArray resources = userJson.getJSONArray("Resources");
-				JSONObject userResource = resources.getJSONObject(0);
+	private void verifyAuthorization(String basicAuthorization) {
+		String encodedCredentials = basicAuthorization.split(" ")[1];
+		String[] credentials = new String(Base64.decodeBase64(encodedCredentials)).split(":");
 
-				String userName = userResource.getString("userName");
-				JSONObject names = userResource.getJSONObject("name");
-
-				UserDTO existingUser = ldapClient.getLdapUser(userName);
-
-				// there should always be an existing user in the LDAP tree
-				if (existingUser != null)
-					log.debug(existingUser.toString());
-				else {
-					throw new UnauthorizedException("no existing LDAP user");
-				}
-
-				JSONArray roles = userResource.getJSONArray("groups");
-				for (int i = 0; i < roles.length(); i++) {
-					JSONObject role = roles.getJSONObject(i);
-					String cn = role.getString("display");
-					GroupDTO group = ldapClient.getLdapGroup(cn);
-
-					if (group != null) {
-						// check/add user
-						if (group.getMemberUids() != null && !group.getMemberUids().contains(userName))
-							ldapClient.addGroupMember(cn, userName);
-					} else {
-						// create new group and add user
-						ldapClient.createGroup(cn, ldapClient.generateGroupId());
-						ldapClient.addGroupMember(cn, userName);
-					}
-				}
-			} catch (JSONException e) {
-				// no additional user information
-				log.error(e.getMessage());
-			}
+		if (!credentials[0].equals(restUser) || !credentials[1].equals(restPassword)) {
+			log.error("Wrong credentials {} {}", credentials[0], credentials[1]);
+			throw new UnauthorizedException();
 		}
 	}
 

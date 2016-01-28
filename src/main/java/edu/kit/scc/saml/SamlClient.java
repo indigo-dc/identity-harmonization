@@ -34,25 +34,20 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.apache.commons.httpclient.Cookie;
-import org.apache.commons.httpclient.HttpState;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.joda.time.DateTime;
 import org.opensaml.DefaultBootstrap;
 import org.opensaml.common.SAMLVersion;
 import org.opensaml.common.impl.SecureRandomIdentifierGenerator;
-import org.opensaml.common.xml.SAMLConstants;
 import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeQuery;
 import org.opensaml.saml2.core.AttributeStatement;
 import org.opensaml.saml2.core.AttributeValue;
-import org.opensaml.saml2.core.AuthnRequest;
 import org.opensaml.saml2.core.Conditions;
 import org.opensaml.saml2.core.Issuer;
 import org.opensaml.saml2.core.NameID;
-import org.opensaml.saml2.core.NameIDPolicy;
 import org.opensaml.saml2.core.Response;
 import org.opensaml.saml2.core.Subject;
 import org.opensaml.ws.soap.client.BasicSOAPMessageContext;
@@ -107,6 +102,7 @@ public class SamlClient {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private String printXml(Element element) {
 		String returnString = "";
 		TransformerFactory tfactory = TransformerFactory.newInstance();
