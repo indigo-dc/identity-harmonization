@@ -33,7 +33,7 @@ public class AuthenticationController {
 	@RequestMapping("/login")
 	public String login(Model model) {
 		String redirectUrl = oauth2AuthorizeUri.replaceAll("/$", "");
-		redirectUrl += "?response_type=code&scope=openid&client_id=";
+		redirectUrl += "?response_type=code&scope=openid%20email&client_id=";
 		redirectUrl += oauth2ClientId;
 		redirectUrl += "&redirect_uri=";
 		redirectUrl += oauth2RedirectUri;

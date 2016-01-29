@@ -8,6 +8,9 @@
  */
 package edu.kit.scc.scim;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +56,11 @@ public class ScimClient {
 		JSONObject json = null;
 		HttpClient client = new HttpClient();
 		String url = userEndpoint.replaceAll("/$", "");
-		url += "?filter=userNameEq" + name;
+		try {
+			url += "?filter=userNameEq" + URLEncoder.encode(name, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			log.error("ERROR {}", e.getMessage());
+		}
 
 		HttpResponse response = client.makeHttpsGetRequest(user, password, url);
 

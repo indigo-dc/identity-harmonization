@@ -39,9 +39,9 @@ public class IdentityHarmonizer {
 	@Autowired
 	private OidcClient oidcClient;
 
-	public ScimUser harmonizeIdentities(String subject, OIDCTokens tokens) {
+	public ScimUser harmonizeIdentities(String username, OIDCTokens tokens) {
 		ScimUser scimUser = new ScimUser();
-		scimUser.setUserName(subject);
+		scimUser.setUserName(username);
 
 		// OIDC
 		log.debug("Try to get OIDC user information");
@@ -71,13 +71,32 @@ public class IdentityHarmonizer {
 			}
 		}
 
+		if (scimUser.getUserName() != null && !scimUser.getUserName().equals(username)) {
+			log.warn("provided username {} does not equal oidc username {}", username, scimUser.getUserName());
+			// the google case ..
+			if (scimUser.getEmails() != null && !scimUser.getEmails().isEmpty()) {
+				String emailAddress = scimUser.getEmails().get(0).getValue();
+				String[] scopedEmail = emailAddress.split("@");
+				try {
+					String userId = scopedEmail[0];
+					log.warn("overwrite username {} with {}", scimUser.getUserName(), userId);
+
+					scimUser.setUserName(userId);
+				} catch (Exception e) {
+					log.warn("ERROR parsing email {}", e.getMessage());
+				}
+			}
+		} else {
+			log.warn("provided username {} does not equal oidc subject {}", username, scimUser.getExternalId());
+			log.warn("overwrite username {} with {}", username, scimUser.getExternalId());
+			scimUser.setUserName(scimUser.getExternalId());
+		}
+
 		// SCIM
 		log.debug("Try to get SCIM user information");
 		JSONObject userJson = scimClient.getUser(scimUser.getUserName());
 		if (userJson != null) {
 			log.debug("SCIM user info {}", userJson.toString());
-
-			// TODO merge with SCIM user
 		}
 
 		// LDAP
@@ -85,6 +104,8 @@ public class IdentityHarmonizer {
 
 		// REGAPP
 		// TODO
+
+		// TODO merge
 
 		log.debug("Aggregated SCIM user information {}", scimUser.toString());
 		return scimUser;

@@ -28,7 +28,6 @@ public class ScimUserAttributeMapper {
 
 	public ScimUser mapFromUserInfo(UserInfo userInfo) {
 		ScimUser scimUser = new ScimUser();
-		scimUser.setName(new Name());
 
 		com.nimbusds.openid.connect.sdk.claims.Address address = userInfo.getAddress();
 		if (address != null) {
@@ -63,17 +62,26 @@ public class ScimUserAttributeMapper {
 			scimUser.getPhoneNumbers().add(scimPhoneNumber);
 		}
 		String familyName = userInfo.getFamilyName();
-		if (familyName != null)
+		if (familyName != null) {
+			if (scimUser.getName() == null)
+				scimUser.setName(new Name());
 			scimUser.getName().setFamilyName(familyName);
+		}
 		String givenName = userInfo.getGivenName();
-		if (givenName != null)
+		if (givenName != null) {
+			if (scimUser.getName() == null)
+				scimUser.setName(new Name());
 			scimUser.getName().setGivenName(givenName);
+		}
 		String locale = userInfo.getLocale();
 		if (locale != null)
 			scimUser.setLocale(locale);
 		String middleName = userInfo.getMiddleName();
-		if (middleName != null)
+		if (middleName != null) {
+			if (scimUser.getName() == null)
+				scimUser.setName(new Name());
 			scimUser.getName().setMiddleName(middleName);
+		}
 		String userName = userInfo.getName();
 		if (userName != null)
 			scimUser.setUserName(userName);

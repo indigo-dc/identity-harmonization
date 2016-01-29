@@ -11,6 +11,8 @@ package edu.kit.scc;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
+import javax.ws.rs.FormParam;
+
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +61,8 @@ public class RestServiceController {
 
 	@RequestMapping(path = "/ecp/regid/{regId}", method = RequestMethod.POST)
 	public ScimUser ecpAuthentication(@PathVariable String regId,
-			@RequestHeader("Authorization") String basicAuthorization, @RequestBody String body) {
+			@RequestHeader("Authorization") String basicAuthorization, @FormParam("username") String username,
+			@FormParam("password") String password, @RequestBody String body) {
 
 		verifyAuthorization(basicAuthorization);
 
@@ -76,10 +79,8 @@ public class RestServiceController {
 		if (!regAppSuccess) {
 			log.debug("Try OIDC authentication");
 			try {
-				String token = body.split("=")[1];
-				log.debug("Got token {}", token);
-				token = URLDecoder.decode(token, "UTF-8");
-				tokens = oidcClient.requestTokens(token);
+				log.debug("Got token {}", password);
+				tokens = oidcClient.requestTokens(URLDecoder.decode(password, "UTF-8"));
 
 				if (tokens != null) {
 					log.debug("OIDC authentication success");
@@ -96,7 +97,7 @@ public class RestServiceController {
 		log.debug("OIDC success {}", oidcSuccess);
 
 		if (regAppSuccess || oidcSuccess) {
-			return identityHarmonizer.harmonizeIdentities(regId, tokens);
+			return identityHarmonizer.harmonizeIdentities(username, tokens);
 		}
 
 		// if nothing succeeded, fail ... gracefully
