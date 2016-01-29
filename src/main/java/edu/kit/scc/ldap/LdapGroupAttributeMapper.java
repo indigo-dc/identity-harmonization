@@ -18,7 +18,7 @@ import org.springframework.ldap.core.AttributesMapper;
 
 import edu.kit.scc.dto.GroupDTO;
 
-public class GroupAttributeMapper implements AttributesMapper<GroupDTO> {
+public class LdapGroupAttributeMapper implements AttributesMapper<GroupDTO> {
 
 	@Override
 	public GroupDTO mapFromAttributes(Attributes attributes) throws NamingException {

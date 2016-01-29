@@ -185,24 +185,24 @@ public class HttpClient {
 
 		} catch (IOException e) {
 			// e.printStackTrace();
-			log.error(e.getMessage());
+			log.error("ERROR {}", e.getMessage());
 		} catch (Exception e) {
 			// e.printStackTrace();
-			log.error(e.getMessage());
+			log.error("ERROR {}", e.getMessage());
 		} finally {
 			if (in != null)
 				try {
 					in.close();
 				} catch (IOException e) {
 					// e.printStackTrace();
-					log.error(e.getMessage());
+					log.error("ERROR {}", e.getMessage());
 				}
 			if (out != null)
 				try {
 					out.close();
 				} catch (IOException e) {
 					// e.printStackTrace();
-					log.error(e.getMessage());
+					log.error("ERROR {}", e.getMessage());
 				}
 		}
 		return response;

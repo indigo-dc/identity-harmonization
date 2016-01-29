@@ -17,6 +17,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ScimUser {
 
+	@JsonInclude(JsonInclude.Include.NON_NULL)
 	public static class Name {
 		private String formatted, familyName, givenName, middleName, honorificPrefix, honorificSufix;
 
@@ -79,6 +80,7 @@ public class ScimUser {
 		}
 	}
 
+	@JsonInclude(JsonInclude.Include.NON_NULL)
 	public static class Email {
 		private String value, type;
 		private boolean primary;
@@ -114,6 +116,7 @@ public class ScimUser {
 		}
 	}
 
+	@JsonInclude(JsonInclude.Include.NON_NULL)
 	public static class Address {
 		private String type, streetAddress, locality, region, postalCode, country, formatted;
 		private boolean primary;
@@ -194,6 +197,7 @@ public class ScimUser {
 		}
 	}
 
+	@JsonInclude(JsonInclude.Include.NON_NULL)
 	public static class PhoneNumber {
 		private String value, type;
 
@@ -220,6 +224,7 @@ public class ScimUser {
 		}
 	}
 
+	@JsonInclude(JsonInclude.Include.NON_NULL)
 	public static class Ims {
 		private String value, type;
 
@@ -246,6 +251,7 @@ public class ScimUser {
 		}
 	}
 
+	@JsonInclude(JsonInclude.Include.NON_NULL)
 	public static class Photo {
 		private String value, type;
 
@@ -272,6 +278,7 @@ public class ScimUser {
 		}
 	}
 
+	@JsonInclude(JsonInclude.Include.NON_NULL)
 	public static class Group {
 		private String value, $ref, display;
 
@@ -306,6 +313,7 @@ public class ScimUser {
 		}
 	}
 
+	@JsonInclude(JsonInclude.Include.NON_NULL)
 	public static class x509Certificate {
 		private String value;
 
@@ -323,6 +331,7 @@ public class ScimUser {
 		}
 	}
 
+	@JsonInclude(JsonInclude.Include.NON_NULL)
 	public static class Meta extends HashMap<String, String> {
 
 		/**
@@ -339,6 +348,7 @@ public class ScimUser {
 	private String id, externalId, userName, displayName, nickName, profileUrl, userType, title, preferredLanguage,
 			locale, timezone, password;
 	private boolean active;
+	private Name name;
 	private List<Email> emails;
 	private List<Address> addresses;
 	private List<PhoneNumber> phoneNumbers;
@@ -346,6 +356,14 @@ public class ScimUser {
 	private List<Photo> photos;
 	private List<Group> groups;
 	private Meta meta;
+
+	public Name getName() {
+		return name;
+	}
+
+	public void setName(Name name) {
+		this.name = name;
+	}
 
 	public List<String> getSchemas() {
 		return schemas;
@@ -517,9 +535,8 @@ public class ScimUser {
 
 	@Override
 	public String toString() {
-		return "ScimUser [" + (USER_SCHEMA != null ? "USER_SCHEMA=" + USER_SCHEMA + ", " : "")
-				+ (schemas != null ? "schemas=" + schemas + ", " : "") + (id != null ? "id=" + id + ", " : "")
-				+ (externalId != null ? "externalId=" + externalId + ", " : "")
+		return "ScimUser [" + (schemas != null ? "schemas=" + schemas + ", " : "")
+				+ (id != null ? "id=" + id + ", " : "") + (externalId != null ? "externalId=" + externalId + ", " : "")
 				+ (userName != null ? "userName=" + userName + ", " : "")
 				+ (displayName != null ? "displayName=" + displayName + ", " : "")
 				+ (nickName != null ? "nickName=" + nickName + ", " : "")
@@ -530,7 +547,7 @@ public class ScimUser {
 				+ (locale != null ? "locale=" + locale + ", " : "")
 				+ (timezone != null ? "timezone=" + timezone + ", " : "")
 				+ (password != null ? "password=" + password + ", " : "") + "active=" + active + ", "
-				+ (emails != null ? "emails=" + emails + ", " : "")
+				+ (name != null ? "name=" + name + ", " : "") + (emails != null ? "emails=" + emails + ", " : "")
 				+ (addresses != null ? "addresses=" + addresses + ", " : "")
 				+ (phoneNumbers != null ? "phoneNumbers=" + phoneNumbers + ", " : "")
 				+ (ims != null ? "ims=" + ims + ", " : "") + (photos != null ? "photos=" + photos + ", " : "")

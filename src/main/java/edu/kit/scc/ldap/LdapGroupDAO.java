@@ -45,7 +45,7 @@ public class LdapGroupDAO implements GroupDAO {
 
 	@Override
 	public List<GroupDTO> getAllGroups() {
-		return ldapTemplate.search(groupBase, "(objectclass=posixGroup)", new GroupAttributeMapper());
+		return ldapTemplate.search(groupBase, "(objectclass=posixGroup)", new LdapGroupAttributeMapper());
 
 	}
 
@@ -55,7 +55,7 @@ public class LdapGroupDAO implements GroupDAO {
 		andFilter.and(new EqualsFilter("objectclass", "posixGroup")).and(new EqualsFilter("cn", commonName));
 		log.debug("LDAP query {}", andFilter.encode());
 
-		return ldapTemplate.search("", andFilter.encode(), new GroupAttributeMapper());
+		return ldapTemplate.search("", andFilter.encode(), new LdapGroupAttributeMapper());
 	}
 
 	@Override

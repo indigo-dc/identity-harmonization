@@ -33,7 +33,7 @@ public class OidcClientTest {
 	@Test
 	public void requestUserInfoTest() {
 		String accessToken = "";
-		oidcClient.requestUserInfo(accessToken);
+		oidcClient.requestUserInfo(accessToken, null);
 	}
 
 }

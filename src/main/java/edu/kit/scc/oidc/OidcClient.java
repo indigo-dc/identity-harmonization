@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
 import com.nimbusds.oauth2.sdk.AuthorizationCodeGrant;
 import com.nimbusds.oauth2.sdk.AuthorizationGrant;
@@ -40,7 +41,11 @@ import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.oauth2.sdk.token.Tokens;
 import com.nimbusds.openid.connect.sdk.OIDCTokenResponse;
 import com.nimbusds.openid.connect.sdk.OIDCTokenResponseParser;
+import com.nimbusds.openid.connect.sdk.UserInfoErrorResponse;
 import com.nimbusds.openid.connect.sdk.UserInfoRequest;
+import com.nimbusds.openid.connect.sdk.UserInfoResponse;
+import com.nimbusds.openid.connect.sdk.UserInfoSuccessResponse;
+import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 import com.nimbusds.openid.connect.sdk.token.OIDCTokens;
 
 import edu.kit.scc.http.CustomSSLContext;
@@ -82,9 +87,8 @@ public class OidcClient {
 	 * @return a {@link JSONObject} with the OIDC user information
 	 */
 	@SuppressWarnings("static-access")
-	public JSONObject requestUserInfo(String accessToken) {
-		JSONObject userInfoResponse = null;
-
+	public UserInfo requestUserInfo(String accessToken, JWTClaimsSet claimsSet) {
+		UserInfo userInfo = null;
 		try {
 			AccessToken token = AccessToken.parse("Bearer " + accessToken);
 
@@ -96,38 +100,47 @@ public class OidcClient {
 			httpRequest.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
 
 			HTTPResponse response = null;
+
+			// DEBUG
+			logHttpRequest(httpRequest);
+
 			response = request.toHTTPRequest().send();
 
-			log.debug(response.getContentAsJSONObject().toJSONString());
+			// DEBUG
+			logHttpResponse(response);
 
-			return new JSONObject(response.getContentAsJSONObject().toJSONString());
+			net.minidev.json.JSONObject jsonResponse = response.getContentAsJSONObject();
+			jsonResponse.put("sub", claimsSet.getSubject());
 
-			// userInfoResponse = UserInfoResponse.parse(response);
-			//
-			// if (userInfoResponse instanceof UserInfoErrorResponse) {
-			// ErrorObject error = ((UserInfoErrorResponse)
-			// userInfoResponse).getErrorObject();
-			// System.out.println("ERROR " + error.getDescription());
-			// return null;
-			// }
-			//
-			// UserInfoSuccessResponse successResponse =
-			// (UserInfoSuccessResponse) userInfoResponse;
-			// String claims =
-			// successResponse.getUserInfo().toJSONObject().toJSONString();
-			//
-			// System.out.println(claims);
-			//
-			// return successResponse;
+			response.setContent(jsonResponse.toJSONString());
 
+			UserInfoResponse userInfoResponse = UserInfoResponse.parse(response);
+
+			if (userInfoResponse instanceof UserInfoErrorResponse) {
+				UserInfoErrorResponse errorResponse = (UserInfoErrorResponse) userInfoResponse;
+
+				ErrorObject error = ((UserInfoErrorResponse) errorResponse).getErrorObject();
+				log.warn("ERROR HTTP {} code {}", error.getHTTPStatusCode(), error.getCode());
+				log.warn("ERROR " + error.getDescription());
+				return null;
+			}
+
+			UserInfoSuccessResponse successResponse = (UserInfoSuccessResponse) userInfoResponse;
+
+			userInfo = successResponse.getUserInfo();
+
+			log.debug(userInfo.toJSONObject().toJSONString());
+
+			return userInfo;
 		} catch (ParseException e) {
-			e.printStackTrace();
+			log.error("ERROR {}", e.getMessage());
 		} catch (URISyntaxException e) {
-			e.printStackTrace();
+			log.error("ERROR {}", e.getMessage());
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.error("ERROR {}", e.getMessage());
 		}
-		return userInfoResponse;
+
+		return userInfo;
 	}
 
 	/**
@@ -169,18 +182,16 @@ public class OidcClient {
 			httpRequest.setDefaultHostnameVerifier(new NullHostNameVerifier());
 			httpRequest.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
 
-			log.debug("------HTTP REQUEST DEBUG------");
-			for (Entry<String, String> e : httpRequest.getHeaders().entrySet())
-				log.debug("{} {}", e.getKey(), e.getValue());
-			log.debug("Method {}", httpRequest.getMethod());
-			log.debug("Query {}", httpRequest.getQuery());
-			log.debug("Url {}", httpRequest.getURL());
-			log.debug("------HTTP REQUEST DEBUG------");
+			// DEBUG
+			logHttpRequest(httpRequest);
 
 			httpResponse = httpRequest.send();
 
 			TokenResponse response = null;
 			response = OIDCTokenResponseParser.parse(httpResponse);
+
+			// DEBUG
+			logHttpResponse(httpResponse);
 
 			if (response instanceof TokenErrorResponse) {
 
@@ -198,15 +209,35 @@ public class OidcClient {
 
 			tokens = oidcTokenResponse.getOIDCTokens();
 
-			log.debug(oidcTokenResponse.getOIDCTokens().toJSONObject().toJSONString());
+			log.debug(tokens.toJSONObject().toJSONString());
+
 			return tokens;
 		} catch (ParseException e) {
-			e.printStackTrace();
+			log.error("ERROR {}", e.getMessage());
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.error("ERROR {}", e.getMessage());
 		} catch (URISyntaxException e) {
-			e.printStackTrace();
+			log.error("ERROR {}", e.getMessage());
 		}
 		return tokens;
+	}
+
+	private void logHttpRequest(HTTPRequest httpRequest) {
+		log.debug("------HTTP REQUEST DEBUG------");
+		for (Entry<String, String> e : httpRequest.getHeaders().entrySet())
+			log.debug("{} {}", e.getKey(), e.getValue());
+		log.debug("Method {}", httpRequest.getMethod());
+		log.debug("Query {}", httpRequest.getQuery());
+		log.debug("Url {}", httpRequest.getURL());
+		log.debug("------HTTP REQUEST DEBUG------");
+	}
+
+	private void logHttpResponse(HTTPResponse httpResponse) {
+		log.debug("------HTTP RESPONSE DEBUG------");
+		for (Entry<String, String> e : httpResponse.getHeaders().entrySet())
+			log.debug("{} {}", e.getKey(), e.getValue());
+		log.debug("Status code {}", httpResponse.getStatusCode());
+		log.debug("Content {}", httpResponse.getContent());
+		log.debug("------HTTP RESPONSE DEBUG------");
 	}
 }

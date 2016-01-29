@@ -16,7 +16,7 @@ import org.springframework.ldap.core.AttributesMapper;
 
 import edu.kit.scc.dto.UserDTO;
 
-public class UserAttributeMapper implements AttributesMapper<UserDTO> {
+public class LdapUserAttributeMapper implements AttributesMapper<UserDTO> {
 
 	@Override
 	public UserDTO mapFromAttributes(Attributes attributes) throws NamingException {

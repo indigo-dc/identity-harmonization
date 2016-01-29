@@ -52,7 +52,9 @@ public class ScimClient {
 	public JSONObject getUser(String name) {
 		JSONObject json = null;
 		HttpClient client = new HttpClient();
-		String url = userEndpoint + "?userNameEq" + name;
+		String url = userEndpoint.replaceAll("/$", "");
+		url += "?filter=userNameEq" + name;
+
 		HttpResponse response = client.makeHttpsGetRequest(user, password, url);
 
 		if (response != null) {
@@ -72,7 +74,8 @@ public class ScimClient {
 	public JSONObject getUsers() {
 		JSONObject json = null;
 		HttpClient client = new HttpClient();
-		HttpResponse response = client.makeHttpsGetRequest(user, password, userEndpoint);
+		String url = userEndpoint.replaceAll("/$", "");
+		HttpResponse response = client.makeHttpsGetRequest(user, password, url);
 
 		if (response != null) {
 			log.debug(response.toString());
@@ -91,7 +94,8 @@ public class ScimClient {
 	public JSONObject getGroups(String user, String password) {
 		JSONObject json = null;
 		HttpClient client = new HttpClient();
-		HttpResponse response = client.makeHttpsGetRequest(user, password, groupEndpoint);
+		String url = groupEndpoint.replaceAll("/$", "");
+		HttpResponse response = client.makeHttpsGetRequest(user, password, url);
 
 		if (response != null) {
 			log.debug(response.toString());

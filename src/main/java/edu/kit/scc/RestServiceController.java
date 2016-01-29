@@ -50,7 +50,7 @@ public class RestServiceController {
 	private OidcClient oidcClient;
 
 	@Autowired
-	private Harmonizer identityHarmonizer;
+	private IdentityHarmonizer identityHarmonizer;
 
 	// expected body e.g.
 	// password=password

@@ -44,7 +44,7 @@ public class LdapUserDAO implements UserDAO {
 
 	@Override
 	public List<UserDTO> getAllUsers() {
-		return ldapTemplate.search(userBase, "(objectclass=posixAccount)", new UserAttributeMapper());
+		return ldapTemplate.search(userBase, "(objectclass=posixAccount)", new LdapUserAttributeMapper());
 	}
 
 	@Override
@@ -53,7 +53,7 @@ public class LdapUserDAO implements UserDAO {
 		andFilter.and(new EqualsFilter("objectclass", "posixAccount")).and(new EqualsFilter("uid", uid));
 		log.debug("LDAP query {}", andFilter.encode());
 
-		return ldapTemplate.search("", andFilter.encode(), new UserAttributeMapper());
+		return ldapTemplate.search("", andFilter.encode(), new LdapUserAttributeMapper());
 	}
 
 	@Override
