@@ -10,15 +10,24 @@ package edu.kit.scc.scim;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
+import java.util.Map.Entry;
 
 import javax.mail.internet.InternetAddress;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.nimbusds.oauth2.sdk.id.Subject;
 import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 
 import edu.kit.scc.scim.ScimUser.Address;
 import edu.kit.scc.scim.ScimUser.Email;
+import edu.kit.scc.scim.ScimUser.Group;
 import edu.kit.scc.scim.ScimUser.Meta;
 import edu.kit.scc.scim.ScimUser.Name;
 import edu.kit.scc.scim.ScimUser.PhoneNumber;
@@ -26,8 +35,48 @@ import edu.kit.scc.scim.ScimUser.Photo;
 
 public class ScimUserAttributeMapper {
 
+	private static final Logger log = LoggerFactory.getLogger(ScimUserAttributeMapper.class);
+
+	public ScimUser mapFromRegAppQuery(String query) {
+		ScimUser scimUser = new ScimUser();
+		scimUser.setSchemas(Arrays.asList(scimUser.USER_SCHEMA_2_0));
+
+		try {
+			JSONObject jsonQuery = new JSONObject(query);
+
+			String eppn = jsonQuery.getString("eppn");
+			if (eppn != null) {
+				String userName = eppn.split("@")[0];
+				scimUser.setUserName(userName);
+			}
+			String mail = jsonQuery.getString("mail");
+			if (mail != null) {
+				if (scimUser.getEmails() == null)
+					scimUser.setEmails(new ArrayList<Email>());
+
+				Email email = new Email();
+				email.setValue(mail);
+
+				scimUser.getEmails().add(email);
+			}
+			String lastUpdate = jsonQuery.getString("last_update");
+			if (lastUpdate != null) {
+				if (scimUser.getMeta() == null)
+					scimUser.setMeta(new Meta());
+
+				scimUser.getMeta().put("lastModified", lastUpdate);
+			}
+		} catch (JSONException e) {
+
+		} catch (ArrayIndexOutOfBoundsException e) {
+
+		}
+		return scimUser;
+	}
+
 	public ScimUser mapFromUserInfo(UserInfo userInfo) {
 		ScimUser scimUser = new ScimUser();
+		scimUser.setSchemas(Arrays.asList(scimUser.USER_SCHEMA_2_0));
 
 		com.nimbusds.openid.connect.sdk.claims.Address address = userInfo.getAddress();
 		if (address != null) {
@@ -125,5 +174,104 @@ public class ScimUserAttributeMapper {
 			scimUser.setTimezone(timezone);
 
 		return scimUser;
+	}
+
+	public ScimUser mapFromScim1User(ScimUser1_0 scim1User) {
+		ScimUser scimUser = new ScimUser();
+		scimUser.setSchemas(Arrays.asList(scimUser.USER_SCHEMA_2_0));
+
+		List<String> emails = scim1User.getEmails();
+		if (emails != null) {
+			if (scimUser.getEmails() == null)
+				scimUser.setEmails(new ArrayList<Email>());
+
+			for (String email : emails) {
+				Email newEmail = new Email();
+				newEmail.setValue(email);
+				scimUser.getEmails().add(newEmail);
+			}
+		}
+
+		List<edu.kit.scc.scim.ScimUser1_0.Group> groups = scim1User.getGroups();
+		if (groups != null) {
+			if (scimUser.getGroups() == null)
+				scimUser.setGroups(new ArrayList<Group>());
+
+			for (edu.kit.scc.scim.ScimUser1_0.Group group : groups) {
+				Group newGroup = new Group();
+				newGroup.setDisplay(group.getDisplay());
+				newGroup.setValue(group.getValue());
+				scimUser.getGroups().add(newGroup);
+			}
+		}
+
+		String id = scim1User.getId();
+		if (id != null)
+			scimUser.setId(id);
+
+		edu.kit.scc.scim.ScimUser1_0.Meta meta = scim1User.getMeta();
+		if (meta != null) {
+			if (scimUser.getMeta() == null)
+				scimUser.setMeta(new Meta());
+
+			for (Entry<String, String> entry : meta.entrySet()) {
+				scimUser.getMeta().put(entry.getKey(), entry.getValue());
+			}
+		}
+
+		edu.kit.scc.scim.ScimUser1_0.Name name = scim1User.getName();
+		if (name != null) {
+			if (scimUser.getName() == null)
+				scimUser.setName(new Name());
+
+			scimUser.getName().setFamilyName(name.getFamilyName());
+			scimUser.getName().setGivenName(name.getGivenName());
+		}
+
+		String userName = scim1User.getUserName();
+		if (userName != null)
+			scimUser.setUserName(userName);
+
+		return scimUser;
+	}
+
+	// TODO
+	// for now only user name and groups are checked
+	// user info from IdP have precedence, groups are added from SCIM provider
+	public ScimUser merge(ScimUser scimUserFromScimProvider, ScimUser scimUserFromIdP) {
+		if (scimUserFromIdP == null) {
+			log.warn("SCIM user from IdP null");
+			return scimUserFromScimProvider;
+		}
+		if (scimUserFromScimProvider == null) {
+			log.warn("SCIM user from SCIM provider null");
+			return scimUserFromIdP;
+		}
+
+		log.debug("merge {} with {}", scimUserFromScimProvider.toString(), scimUserFromIdP.toString());
+
+		ScimUser aggregate = scimUserFromIdP;
+
+		String userNameFromScimProvider = scimUserFromScimProvider.getUserName();
+		String userNameFromIdP = scimUserFromIdP.getUserName();
+
+		if (userNameFromScimProvider != null && userNameFromIdP != null) {
+			if (!userNameFromScimProvider.equals(userNameFromIdP)) {
+				log.warn("CONFLICT SCIM user name {} with IdP user name {}", userNameFromScimProvider, userNameFromIdP);
+				log.debug("Merged user info {}", aggregate.toString());
+				return aggregate;
+			}
+		}
+
+		List<Group> groups = scimUserFromScimProvider.getGroups();
+		if (groups != null && !groups.isEmpty()) {
+			if (aggregate.getGroups() == null) {
+				aggregate.setGroups(groups);
+			} else {
+				aggregate.getGroups().addAll(groups);
+			}
+		}
+		log.debug("Merged user info {}", aggregate.toString());
+		return aggregate;
 	}
 }

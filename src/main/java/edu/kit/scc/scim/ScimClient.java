@@ -11,11 +11,14 @@ package edu.kit.scc.scim;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import edu.kit.scc.http.HttpClient;
 import edu.kit.scc.http.HttpResponse;
@@ -98,7 +101,7 @@ public class ScimClient {
 	 * 
 	 * @return a {@link JSONObject} with the SCIM group information
 	 */
-	public JSONObject getGroups(String user, String password) {
+	public JSONObject getGroups() {
 		JSONObject json = null;
 		HttpClient client = new HttpClient();
 		String url = groupEndpoint.replaceAll("/$", "");
@@ -113,4 +116,53 @@ public class ScimClient {
 		return json;
 	}
 
+	/**
+	 * Gets all user information from the SCIM provider.
+	 * 
+	 * @param username
+	 *            the user's username
+	 * @return a {@link ScimUser} with the SCIM user information
+	 *         urn:ietf:params:scim:schemas:core:2.0:User formatted
+	 */
+	public ScimUser getScimUser(String username) {
+		ScimUser scimUser = new ScimUser();
+
+		log.debug("Try to get SCIM user information");
+		JSONObject scimJson = getUser(username);
+
+		try {
+			log.debug("Got SCIM {}", scimJson.toString());
+			JSONArray schemas = scimJson.getJSONArray("schemas");
+			if (schemas != null && schemas.length() > 0) {
+				String schema = schemas.getString(0);
+
+				ObjectMapper mapper = new ObjectMapper();
+
+				if (schema.equals(scimUser.CORE_SCHEMA_1_0)) {
+					JSONArray resources = scimJson.getJSONArray("Resources");
+					JSONObject scim1Json = resources.getJSONObject(0);
+
+					log.debug("{} {}", scimUser.CORE_SCHEMA_1_0, scim1Json.toString());
+
+					ScimUser1_0 scim1User = mapper.readValue(scim1Json.toString(), ScimUser1_0.class);
+					ScimUserAttributeMapper attributeMapper = new ScimUserAttributeMapper();
+
+					scimUser = attributeMapper.mapFromScim1User(scim1User);
+				}
+
+				if (schema.equals(scimUser.USER_SCHEMA_2_0)) {
+
+					log.debug("{} {}", scimUser.USER_SCHEMA_2_0, scimJson.toString());
+
+					scimUser = mapper.readValue(scimJson.toString(), ScimUser.class);
+				}
+			}
+
+		} catch (Exception e) {
+			log.warn("ERROR {}", e.getMessage());
+			scimUser = null;
+		}
+
+		return scimUser;
+	}
 }

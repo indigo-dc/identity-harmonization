@@ -8,9 +8,6 @@
  */
 package edu.kit.scc;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-
 import javax.ws.rs.FormParam;
 
 import org.apache.commons.codec.binary.Base64;
@@ -29,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.nimbusds.openid.connect.sdk.token.OIDCTokens;
 
+import edu.kit.scc.http.HttpResponse;
 import edu.kit.scc.oidc.OidcClient;
 import edu.kit.scc.regapp.RegAppClient;
 import edu.kit.scc.scim.ScimUser;
@@ -39,10 +37,10 @@ public class RestServiceController {
 
 	private static Logger log = LoggerFactory.getLogger(RestServiceController.class);
 
-	@Value("${regapp.serviceUsername}")
+	@Value("${rest.serviceUsername}")
 	private String restUser;
 
-	@Value("${regapp.servicePassword}")
+	@Value("${rest.servicePassword}")
 	private String restPassword;
 
 	@Autowired
@@ -68,37 +66,33 @@ public class RestServiceController {
 
 		log.debug("Request body {}", body);
 
+		boolean regAppSuccess = false;
+		boolean oidcSuccess = false;
+
 		// REG-APP
 		log.debug("Try reg-app authentication");
-		boolean regAppSuccess = regAppClient.authenticate(regId, body);
-		log.debug("Reg-app success {}", regAppSuccess);
+		regAppSuccess = regAppClient.authenticate(regId, body);
+		log.debug("Reg-app authentication {}", regAppSuccess);
+
+		HttpResponse regAppQuery = null;
+		OIDCTokens tokens = null;
+
+		if (regAppSuccess) {
+			regAppQuery = regAppClient.attributeQuery(regId);
+			return identityHarmonizer.harmonizeIdentities(username, regAppQuery);
+		}
 
 		// OIDC
-		boolean oidcSuccess = false;
-		OIDCTokens tokens = null;
-		if (!regAppSuccess) {
-			log.debug("Try OIDC authentication");
-			try {
-				log.debug("Got token {}", password);
-				tokens = oidcClient.requestTokens(URLDecoder.decode(password, "UTF-8"));
+		log.debug("Try OIDC authentication");
+		log.debug("Got token {}", password);
+		tokens = oidcClient.requestTokens(password);
 
-				if (tokens != null) {
-					log.debug("OIDC authentication success");
-					oidcSuccess = true;
-				}
-			} catch (ArrayIndexOutOfBoundsException e) {
-				log.error(e.getMessage());
-				throw new UnauthorizedException();
-			} catch (UnsupportedEncodingException e) {
-				log.error(e.getMessage());
-				throw new UnauthorizedException();
-			}
-		}
-		log.debug("OIDC success {}", oidcSuccess);
-
-		if (regAppSuccess || oidcSuccess) {
+		if (tokens != null) {
+			oidcSuccess = true;
+			log.debug("OIDC authentication {}", oidcSuccess);
 			return identityHarmonizer.harmonizeIdentities(username, tokens);
 		}
+		log.debug("OIDC authentication {}", oidcSuccess);
 
 		// if nothing succeeded, fail ... gracefully
 		throw new UnauthorizedException();

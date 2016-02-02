@@ -342,7 +342,10 @@ public class ScimUser {
 	}
 
 	@JsonIgnore
-	public final String USER_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:User";
+	public final String CORE_SCHEMA_1_0 = "urn:scim:schemas:core:1.0";
+
+	@JsonIgnore
+	public final String USER_SCHEMA_2_0 = "urn:ietf:params:scim:schemas:core:2.0:User";
 
 	private List<String> schemas;
 	private String id, externalId, userName, displayName, nickName, profileUrl, userType, title, preferredLanguage,
