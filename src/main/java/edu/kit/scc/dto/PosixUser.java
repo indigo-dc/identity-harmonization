@@ -8,15 +8,43 @@
  */
 package edu.kit.scc.dto;
 
-public class UserDTO {
+public class PosixUser {
 
 	String uid;
 	String commonName;
 	String surName;
 	String homeDirectory;
 	String description;
+	String gecos;
+	String loginShell;
+	String userPassword;
+
 	int uidNumber;
 	int gidNumber;
+
+	public String getGecos() {
+		return gecos;
+	}
+
+	public void setGecos(String gecos) {
+		this.gecos = gecos;
+	}
+
+	public String getLoginShell() {
+		return loginShell;
+	}
+
+	public void setLoginShell(String loginShell) {
+		this.loginShell = loginShell;
+	}
+
+	public String getUserPassword() {
+		return userPassword;
+	}
+
+	public void setUserPassword(String userPassword) {
+		this.userPassword = userPassword;
+	}
 
 	public String getUid() {
 		return uid;
@@ -76,11 +104,14 @@ public class UserDTO {
 
 	@Override
 	public String toString() {
-		return "UserDTO [" + (uid != null ? "uid=" + uid + ", " : "")
+		return "PosixUser [" + (uid != null ? "uid=" + uid + ", " : "")
 				+ (commonName != null ? "commonName=" + commonName + ", " : "")
 				+ (surName != null ? "surName=" + surName + ", " : "")
 				+ (homeDirectory != null ? "homeDirectory=" + homeDirectory + ", " : "")
-				+ (description != null ? "description=" + description + ", " : "") + "uidNumber=" + uidNumber
+				+ (description != null ? "description=" + description + ", " : "")
+				+ (gecos != null ? "gecos=" + gecos + ", " : "")
+				+ (loginShell != null ? "loginShell=" + loginShell + ", " : "")
+				+ (userPassword != null ? "userPassword=" + userPassword + ", " : "") + "uidNumber=" + uidNumber
 				+ ", gidNumber=" + gidNumber + "]";
 	}
 }

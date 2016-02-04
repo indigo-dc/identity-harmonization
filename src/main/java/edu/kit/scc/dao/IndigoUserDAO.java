@@ -10,16 +10,16 @@ package edu.kit.scc.dao;
 
 import java.util.List;
 
-import edu.kit.scc.dto.UserDTO;
+import edu.kit.scc.dto.IndigoUser;
 
-public interface UserDAO {
-	public List<UserDTO> getAllUsers();
+public interface IndigoUserDAO {
+	public List<IndigoUser> getAllUsers();
 
-	public List<UserDTO> getUserDetails(String uid);
+	public List<IndigoUser> getUserDetails(String uid);
 
-	public void insertUser(UserDTO userDTO);
+	public void insertUser(IndigoUser userDTO);
 
-	public void updateUser(UserDTO userDTO);
+	public void updateUser(IndigoUser userDTO);
 
-	public void deleteUser(UserDTO userDTO);
+	public void deleteUser(IndigoUser userDTO);
 }

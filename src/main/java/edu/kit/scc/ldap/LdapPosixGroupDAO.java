@@ -25,11 +25,11 @@ import org.springframework.ldap.filter.AndFilter;
 import org.springframework.ldap.filter.EqualsFilter;
 import org.springframework.ldap.support.LdapUtils;
 
-import edu.kit.scc.dao.GroupDAO;
-import edu.kit.scc.dto.GroupDTO;
+import edu.kit.scc.dao.PosixGroupDAO;
+import edu.kit.scc.dto.PosixGroup;
 
-public class LdapGroupDAO implements GroupDAO {
-	private static final Logger log = LoggerFactory.getLogger(LdapGroupDAO.class);
+public class LdapPosixGroupDAO implements PosixGroupDAO {
+	private static final Logger log = LoggerFactory.getLogger(LdapPosixGroupDAO.class);
 
 	private LdapTemplate ldapTemplate;
 
@@ -44,35 +44,40 @@ public class LdapGroupDAO implements GroupDAO {
 	}
 
 	@Override
-	public List<GroupDTO> getAllGroups() {
-		return ldapTemplate.search(groupBase, "(objectclass=posixGroup)", new LdapGroupAttributeMapper());
+	public List<PosixGroup> getAllGroups() {
+		return ldapTemplate.search(groupBase, "(objectclass=posixGroup)", new LdapPosixGroupAttributeMapper());
 
 	}
 
 	@Override
-	public List<GroupDTO> getGroupDetails(String commonName) {
+	public List<PosixGroup> getGroupDetails(String commonName) {
 		AndFilter andFilter = new AndFilter();
 		andFilter.and(new EqualsFilter("objectclass", "posixGroup")).and(new EqualsFilter("cn", commonName));
 		log.debug("LDAP query {}", andFilter.encode());
 
-		return ldapTemplate.search("", andFilter.encode(), new LdapGroupAttributeMapper());
+		return ldapTemplate.search("", andFilter.encode(), new LdapPosixGroupAttributeMapper());
 	}
 
 	@Override
-	public void insertGroup(GroupDTO groupDTO) {
+	public void insertGroup(PosixGroup posixGroup) {
 		BasicAttribute posixGroupBasicAttribute = new BasicAttribute("objectclass");
 		posixGroupBasicAttribute.add("posixGroup");
 
 		Attributes posixGroupAttributes = new BasicAttributes();
 		posixGroupAttributes.put(posixGroupBasicAttribute);
-		posixGroupAttributes.put("cn", groupDTO.getCommonName());
-		posixGroupAttributes.put("gidNumber", String.valueOf(groupDTO.getGidNumber()));
+		posixGroupAttributes.put("cn", posixGroup.getCommonName());
+		posixGroupAttributes.put("gidNumber", String.valueOf(posixGroup.getGidNumber()));
+
+		if (posixGroup.getUserPassword() != null)
+			posixGroupAttributes.put("userPassword", posixGroup.getUserPassword());
+		if (posixGroup.getDescription() != null)
+			posixGroupAttributes.put("description", posixGroup.getDescription());
 
 		LdapName newGroupDN = LdapUtils.emptyLdapName();
 		try {
 			newGroupDN = new LdapName(groupBase);
-			newGroupDN.add("cn=" + groupDTO.getCommonName());
-			log.debug(newGroupDN.toString());
+			newGroupDN.add("cn=" + posixGroup.getCommonName());
+			log.debug("Insert {}", newGroupDN.toString());
 			ldapTemplate.bind(newGroupDN, null, posixGroupAttributes);
 		} catch (InvalidNameException e) {
 			e.printStackTrace();
@@ -80,20 +85,25 @@ public class LdapGroupDAO implements GroupDAO {
 	}
 
 	@Override
-	public void updateGroup(GroupDTO groupDTO) {
+	public void updateGroup(PosixGroup posixGroup) {
 		BasicAttribute posixGroupBasicAttribute = new BasicAttribute("objectclass");
 		posixGroupBasicAttribute.add("posixGroup");
 
 		Attributes posixGroupAttributes = new BasicAttributes();
 		posixGroupAttributes.put(posixGroupBasicAttribute);
-		posixGroupAttributes.put("cn", groupDTO.getCommonName());
-		posixGroupAttributes.put("gidNumber", String.valueOf(groupDTO.getGidNumber()));
+		posixGroupAttributes.put("cn", posixGroup.getCommonName());
+		posixGroupAttributes.put("gidNumber", String.valueOf(posixGroup.getGidNumber()));
+
+		if (posixGroup.getUserPassword() != null)
+			posixGroupAttributes.put("userPassword", posixGroup.getUserPassword());
+		if (posixGroup.getDescription() != null)
+			posixGroupAttributes.put("description", posixGroup.getDescription());
 
 		LdapName groupDN = LdapUtils.emptyLdapName();
 		try {
 			groupDN = new LdapName(groupBase);
-			groupDN.add("cn=" + groupDTO.getCommonName());
-			log.debug(groupDN.toString());
+			groupDN.add("cn=" + posixGroup.getCommonName());
+			log.debug("Update {}", groupDN.toString());
 			ldapTemplate.bind(groupDN, null, posixGroupAttributes);
 		} catch (InvalidNameException e) {
 			e.printStackTrace();
@@ -101,12 +111,12 @@ public class LdapGroupDAO implements GroupDAO {
 	}
 
 	@Override
-	public void deleteGroup(GroupDTO groupDTO) {
+	public void deleteGroup(PosixGroup posixGroup) {
 		LdapName groupDN = LdapUtils.emptyLdapName();
 		try {
 			groupDN = new LdapName(groupBase);
-			groupDN.add("cn=" + groupDTO.getCommonName());
-			log.debug(groupDN.toString());
+			groupDN.add("cn=" + posixGroup.getCommonName());
+			log.debug("Delete {}", groupDN.toString());
 			ldapTemplate.unbind(groupDN);
 		} catch (InvalidNameException e) {
 			e.printStackTrace();
@@ -114,14 +124,14 @@ public class LdapGroupDAO implements GroupDAO {
 	}
 
 	@Override
-	public void addMember(GroupDTO groupDTO, String memberUid) {
+	public void addMember(PosixGroup posixGroup, String memberUid) {
 		ModificationItem[] modificationItems = new ModificationItem[] {
 				new ModificationItem(DirContext.ADD_ATTRIBUTE, new BasicAttribute("memberUid", memberUid)) };
 		LdapName groupDN = LdapUtils.emptyLdapName();
 		try {
 			groupDN = new LdapName(groupBase);
-			groupDN.add("cn=" + groupDTO.getCommonName());
-			log.debug(groupDN.toString());
+			groupDN.add("cn=" + posixGroup.getCommonName());
+			log.debug("Add member {} to {}", memberUid, groupDN.toString());
 			ldapTemplate.modifyAttributes(groupDN, modificationItems);
 		} catch (InvalidNameException e) {
 			e.printStackTrace();

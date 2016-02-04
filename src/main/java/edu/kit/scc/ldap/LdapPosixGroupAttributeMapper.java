@@ -16,26 +16,35 @@ import javax.naming.directory.Attributes;
 
 import org.springframework.ldap.core.AttributesMapper;
 
-import edu.kit.scc.dto.GroupDTO;
+import edu.kit.scc.dto.PosixGroup;
 
-public class LdapGroupAttributeMapper implements AttributesMapper<GroupDTO> {
+public class LdapPosixGroupAttributeMapper implements AttributesMapper<PosixGroup> {
 
 	@Override
-	public GroupDTO mapFromAttributes(Attributes attributes) throws NamingException {
-		GroupDTO groupDTO = new GroupDTO();
+	public PosixGroup mapFromAttributes(Attributes attributes) throws NamingException {
+		PosixGroup posixGroup = new PosixGroup();
 		String commonName = (String) attributes.get("cn").get();
 		if (commonName != null)
-			groupDTO.setCommonName(commonName);
+			posixGroup.setCommonName(commonName);
 		Attribute gidNumber = attributes.get("gidNumber");
 		if (gidNumber != null)
-			groupDTO.setGidNumber(Integer.valueOf((String) gidNumber.get()));
+			posixGroup.setGidNumber(Integer.valueOf((String) gidNumber.get()));
+
 		Attribute memberUids = attributes.get("memberUid");
 		if (memberUids != null) {
-			groupDTO.setMemberUids(new ArrayList<String>());
+			posixGroup.setMemberUids(new ArrayList<String>());
 			for (int i = 0; i < memberUids.size(); i++)
-				groupDTO.getMemberUids().add((String) memberUids.get(i));
+				posixGroup.getMemberUids().add((String) memberUids.get(i));
 		}
-		return groupDTO;
+
+		Attribute description = attributes.get("description");
+		if (description != null)
+			posixGroup.setDescription((String) description.get());
+		Attribute userPassword = attributes.get("userPassword");
+		if (userPassword != null)
+			posixGroup.setUserPassword((String) userPassword.get());
+
+		return posixGroup;
 	}
 
 }

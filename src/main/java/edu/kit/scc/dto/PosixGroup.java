@@ -10,11 +10,13 @@ package edu.kit.scc.dto;
 
 import java.util.List;
 
-public class GroupDTO {
+public class PosixGroup {
 
 	String commonName;
 	int gidNumber;
 	List<String> memberUids;
+	String description;
+	String userPassword;
 
 	public String getCommonName() {
 		return commonName;
@@ -40,9 +42,27 @@ public class GroupDTO {
 		this.memberUids = memberUids;
 	}
 
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public String getUserPassword() {
+		return userPassword;
+	}
+
+	public void setUserPassword(String userPassword) {
+		this.userPassword = userPassword;
+	}
+
 	@Override
 	public String toString() {
-		return "GroupDTO [" + (commonName != null ? "commonName=" + commonName + ", " : "") + "gidNumber=" + gidNumber
-				+ ", " + (memberUids != null ? "memberUids=" + memberUids : "") + "]";
+		return "PosixGroup [" + (commonName != null ? "commonName=" + commonName + ", " : "") + "gidNumber=" + gidNumber
+				+ ", " + (memberUids != null ? "memberUids=" + memberUids + ", " : "")
+				+ (description != null ? "description=" + description + ", " : "")
+				+ (userPassword != null ? "userPassword=" + userPassword : "") + "]";
 	}
 }

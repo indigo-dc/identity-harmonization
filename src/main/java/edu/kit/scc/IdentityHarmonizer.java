@@ -9,6 +9,7 @@
 package edu.kit.scc;
 
 import java.text.ParseException;
+import java.util.Arrays;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +25,7 @@ import com.nimbusds.openid.connect.sdk.token.OIDCTokens;
 import edu.kit.scc.http.HttpResponse;
 import edu.kit.scc.oidc.OidcClient;
 import edu.kit.scc.scim.ScimClient;
+import edu.kit.scc.scim.ScimListResponse;
 import edu.kit.scc.scim.ScimUser;
 import edu.kit.scc.scim.ScimUserAttributeMapper;
 
@@ -38,8 +40,13 @@ public class IdentityHarmonizer {
 	@Autowired
 	private OidcClient oidcClient;
 
-	public ScimUser harmonizeIdentities(String username, OIDCTokens tokens) {
+	public ScimListResponse harmonizeIdentities(String username, OIDCTokens tokens) {
+		int identityCount = 0;
+
 		ScimUser scimUser = scimClient.getScimUser(username);
+		if (scimUser != null)
+			identityCount++;
+
 		ScimUser scimUserFromJWT = null;
 		ScimUserAttributeMapper mapper = new ScimUserAttributeMapper();
 
@@ -62,24 +69,48 @@ public class IdentityHarmonizer {
 		if (userInfo != null) {
 			log.debug("User info {}", userInfo.toJSONObject().toJSONString());
 			scimUserFromJWT = mapper.mapFromUserInfo(userInfo);
+			if (scimUserFromJWT != null)
+				identityCount++;
 		}
 
-		return mapper.merge(scimUser, scimUserFromJWT);
+		ScimListResponse scimListResponse = new ScimListResponse();
+		scimListResponse
+				.setSchemas(Arrays.asList(scimListResponse.LIST_RESPONSE_SCHEMA, new ScimUser().USER_SCHEMA_2_0));
+		scimListResponse.setResources(Arrays.asList(scimUser, scimUserFromJWT));
+		scimListResponse.setTotalResults(identityCount);
+
+		log.debug("SCIM query response {}", scimListResponse.toString());
+
+		return scimListResponse;
 	}
 
 	// Example Reg-App HttpResponse
 	// {"eppn":"ym0762@partner.kit.edu","last_update":"2016-02-02
 	// 11:47:49.489","email":"ym0762@partner.kit.edu"}
-	public ScimUser harmonizeIdentities(String username, HttpResponse regAppQuery) {
+	public ScimListResponse harmonizeIdentities(String username, HttpResponse regAppQuery) {
+		int identityCount = 0;
 		ScimUser scimUser = scimClient.getScimUser(username);
+		if (scimUser != null)
+			identityCount++;
+
 		ScimUser scimUserFromQuery = null;
 		ScimUserAttributeMapper mapper = new ScimUserAttributeMapper();
 
 		if (regAppQuery != null) {
 			log.debug("Reg-app query response {}", regAppQuery.toString());
 			scimUserFromQuery = mapper.mapFromRegAppQuery(regAppQuery.getResponseString());
+			if (scimUserFromQuery != null)
+				identityCount++;
 		}
 
-		return mapper.merge(scimUser, scimUserFromQuery);
+		ScimListResponse scimListResponse = new ScimListResponse();
+		scimListResponse.setSchemas(Arrays.asList(scimListResponse.LIST_RESPONSE_SCHEMA, scimUser.USER_SCHEMA_2_0));
+		scimListResponse.setResources(Arrays.asList(scimUser, scimUserFromQuery));
+		scimListResponse.setTotalResults(identityCount);
+
+		log.debug("SCIM query response {}", scimListResponse.toString());
+
+		return scimListResponse;
+
 	}
 }

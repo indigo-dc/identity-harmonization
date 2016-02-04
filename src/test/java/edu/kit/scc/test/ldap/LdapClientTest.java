@@ -21,8 +21,8 @@ import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import edu.kit.scc.Application;
-import edu.kit.scc.dto.GroupDTO;
-import edu.kit.scc.dto.UserDTO;
+import edu.kit.scc.dto.PosixGroup;
+import edu.kit.scc.dto.IndigoUser;
 import edu.kit.scc.ldap.LdapClient;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -37,7 +37,7 @@ public class LdapClientTest {
 
 	@Test
 	public void a_createLdapGroupTest() {
-		ldapClient.createGroup("newGroup", 3333);
+		ldapClient.createPosixGroup("newGroup", 3333, null, null);
 	}
 
 	@Test
@@ -50,12 +50,12 @@ public class LdapClientTest {
 		int uidNumber = 6001;
 		int gidNumber = 3333;
 
-		ldapClient.createUser(uid, cn, sn, uidNumber, gidNumber, homeDirectory, description);
+		ldapClient.createIndigoUser(uid, cn, sn, uid, uidNumber, gidNumber, homeDirectory, description, null, null, null);
 	}
 
 	@Test
 	public void c_getLdapUserTest() {
-		UserDTO user = ldapClient.getLdapUser("newUser");
+		IndigoUser user = ldapClient.getIndigoUser("newUser");
 
 		assertNotNull(user);
 
@@ -72,7 +72,7 @@ public class LdapClientTest {
 		int uidNumber = 6001;
 		int gidNumber = 3333;
 
-		ldapClient.updateUser(uid, cn, sn, uidNumber, gidNumber, homeDirectory, description);
+		ldapClient.updateIndigoUser(uid, cn, sn, uid, uidNumber, gidNumber, homeDirectory, description, null, null, null);
 	}
 
 	@Test
@@ -82,7 +82,7 @@ public class LdapClientTest {
 
 	@Test
 	public void f_getLdapGroupTest() {
-		GroupDTO group = ldapClient.getLdapGroup("newGroup");
+		PosixGroup group = ldapClient.getPosixGroup("newGroup");
 
 		assertNotNull(group);
 
@@ -101,12 +101,12 @@ public class LdapClientTest {
 
 	@Test
 	public void getLdapGroupsTest() {
-		ldapClient.getLdapGroups();
+		ldapClient.getPosixGroups();
 	}
 
 	@Test
 	public void getLdapUsersTest() {
-		ldapClient.getLdapUsers();
+		ldapClient.getIndigoUsers();
 	}
 
 	@Test

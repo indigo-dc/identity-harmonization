@@ -8,7 +8,9 @@
  */
 package edu.kit.scc;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.FormParam;
+import javax.ws.rs.HeaderParam;
 
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
@@ -29,6 +31,8 @@ import com.nimbusds.openid.connect.sdk.token.OIDCTokens;
 import edu.kit.scc.http.HttpResponse;
 import edu.kit.scc.oidc.OidcClient;
 import edu.kit.scc.regapp.RegAppClient;
+import edu.kit.scc.scim.ScimListResponse;
+import edu.kit.scc.scim.ScimService;
 import edu.kit.scc.scim.ScimUser;
 
 @RestController
@@ -52,13 +56,26 @@ public class RestServiceController {
 	@Autowired
 	private IdentityHarmonizer identityHarmonizer;
 
-	// expected body e.g.
-	// password=password
-	// password=https%3A%2F%2F512eebd9%3Fk%3D49806e48a5cd2941604eb9dfe321c3bc
-	// password=3D49806e48a5cd2941604eb9dfe321c3bc
+	@Autowired
+	private ScimService scimService;
+
+	@RequestMapping(path = "/scim/Users", method = RequestMethod.POST, produces = "application/scim+json")
+	@ResponseStatus(value = HttpStatus.CREATED)
+	public ScimUser scimAddUser(@RequestHeader("Authorization") String basicAuthorization, @RequestBody String body,
+			HttpServletResponse response) {
+		ScimUser scimUser = new ScimUser();
+
+		verifyAuthorization(basicAuthorization);
+
+		log.debug("Request body {}", body);
+
+		response.addHeader("Location", "");
+
+		return scimUser;
+	}
 
 	@RequestMapping(path = "/ecp/regid/{regId}", method = RequestMethod.POST)
-	public ScimUser ecpAuthentication(@PathVariable String regId,
+	public ScimListResponse ecpAuthentication(@PathVariable String regId,
 			@RequestHeader("Authorization") String basicAuthorization, @FormParam("username") String username,
 			@FormParam("password") String password, @RequestBody String body) {
 
@@ -122,6 +139,24 @@ public class RestServiceController {
 		}
 
 		public UnauthorizedException(Throwable e) {
+			super(e);
+		}
+	}
+
+	@ResponseStatus(value = HttpStatus.CONFLICT)
+	public class ConflictException extends RuntimeException {
+
+		private static final long serialVersionUID = -9070725142810603956L;
+
+		public ConflictException() {
+			super();
+		}
+
+		public ConflictException(String message) {
+			super(message);
+		}
+
+		public ConflictException(Throwable e) {
 			super(e);
 		}
 	}
