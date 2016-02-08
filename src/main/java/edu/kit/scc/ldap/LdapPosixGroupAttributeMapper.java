@@ -42,7 +42,7 @@ public class LdapPosixGroupAttributeMapper implements AttributesMapper<PosixGrou
 			posixGroup.setDescription((String) description.get());
 		Attribute userPassword = attributes.get("userPassword");
 		if (userPassword != null)
-			posixGroup.setUserPassword((String) userPassword.get());
+			posixGroup.setUserPassword((byte[]) userPassword.get());
 
 		return posixGroup;
 	}

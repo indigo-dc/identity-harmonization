@@ -10,7 +10,6 @@ package edu.kit.scc;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.FormParam;
-import javax.ws.rs.HeaderParam;
 
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
@@ -61,17 +60,21 @@ public class RestServiceController {
 
 	@RequestMapping(path = "/scim/Users", method = RequestMethod.POST, produces = "application/scim+json")
 	@ResponseStatus(value = HttpStatus.CREATED)
-	public ScimUser scimAddUser(@RequestHeader("Authorization") String basicAuthorization, @RequestBody String body,
-			HttpServletResponse response) {
-		ScimUser scimUser = new ScimUser();
+	public ScimUser scimAddUser(@RequestHeader("Authorization") String basicAuthorization,
+			@RequestBody ScimUser scimUser, HttpServletResponse response) {
 
 		verifyAuthorization(basicAuthorization);
 
-		log.debug("Request body {}", body);
+		log.debug("Request body {}", scimUser);
 
-		response.addHeader("Location", "");
+		ScimUser createdScimUser = scimService.createLdapIndigoUser(scimUser);
 
-		return scimUser;
+		if (createdScimUser != null) {
+			response.addHeader("Location", "");
+			return createdScimUser;
+		}
+
+		throw new ConflictException();
 	}
 
 	@RequestMapping(path = "/ecp/regid/{regId}", method = RequestMethod.POST)

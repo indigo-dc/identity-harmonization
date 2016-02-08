@@ -57,7 +57,7 @@ public class LdapIndigoUserDAO implements IndigoUserDAO {
 	}
 
 	@Override
-	public void insertUser(IndigoUser indigoUser) {
+	public void insertUser(IndigoUser user) {
 		BasicAttribute personBasicAttribute = new BasicAttribute("objectclass");
 		personBasicAttribute.add("person");
 		personBasicAttribute.add("posixAccount");
@@ -65,27 +65,27 @@ public class LdapIndigoUserDAO implements IndigoUserDAO {
 
 		Attributes personAttributes = new BasicAttributes();
 		personAttributes.put(personBasicAttribute);
-		personAttributes.put("indigoId", indigoUser.getIndigoId());
-		personAttributes.put("cn", indigoUser.getCommonName());
-		personAttributes.put("sn", indigoUser.getSurName());
-		personAttributes.put("uid", indigoUser.getUid());
-		personAttributes.put("uidNumber", String.valueOf(indigoUser.getUidNumber()));
-		personAttributes.put("gidNumber", String.valueOf(indigoUser.getGidNumber()));
-		personAttributes.put("homeDirectory", indigoUser.getHomeDirectory());
+		personAttributes.put("indigoId", user.getIndigoId());
+		personAttributes.put("cn", user.getCommonName());
+		personAttributes.put("sn", user.getSurName());
+		personAttributes.put("uid", user.getUid());
+		personAttributes.put("uidNumber", String.valueOf(user.getUidNumber()));
+		personAttributes.put("gidNumber", String.valueOf(user.getGidNumber()));
+		personAttributes.put("homeDirectory", user.getHomeDirectory());
 
-		if (indigoUser.getDescription() != null)
-			personAttributes.put("description", indigoUser.getDescription());
-		if (indigoUser.getGecos() != null)
-			personAttributes.put("gecos", indigoUser.getGecos());
-		if (indigoUser.getLoginShell() != null)
-			personAttributes.put("loginShell", indigoUser.getLoginShell());
-		if (indigoUser.getUserPassword() != null)
-			personAttributes.put("userPassword", indigoUser.getUserPassword());
+		if (user.getDescription() != null)
+			personAttributes.put("description", user.getDescription());
+		if (user.getGecos() != null)
+			personAttributes.put("gecos", user.getGecos());
+		if (user.getLoginShell() != null)
+			personAttributes.put("loginShell", user.getLoginShell());
+		if (user.getUserPassword() != null)
+			personAttributes.put("userPassword", user.getUserPassword());
 
 		LdapName newUserDN = LdapUtils.emptyLdapName();
 		try {
 			newUserDN = new LdapName(userBase);
-			newUserDN.add("uid=" + indigoUser.getUid());
+			newUserDN.add("uid=" + user.getUid());
 			log.debug("Insert {}", newUserDN.toString());
 			ldapTemplate.bind(newUserDN, null, personAttributes);
 		} catch (InvalidNameException e) {
@@ -94,7 +94,7 @@ public class LdapIndigoUserDAO implements IndigoUserDAO {
 	}
 
 	@Override
-	public void updateUser(IndigoUser indigoUser) {
+	public void updateUser(IndigoUser user) {
 		BasicAttribute personBasicAttribute = new BasicAttribute("objectclass");
 		personBasicAttribute.add("person");
 		personBasicAttribute.add("posixAccount");
@@ -102,28 +102,28 @@ public class LdapIndigoUserDAO implements IndigoUserDAO {
 
 		Attributes personAttributes = new BasicAttributes();
 		personAttributes.put(personBasicAttribute);
-		personAttributes.put("indigoId", indigoUser.getIndigoId());
-		personAttributes.put("cn", indigoUser.getCommonName());
-		personAttributes.put("sn", indigoUser.getSurName());
-		personAttributes.put("description", indigoUser.getDescription());
-		personAttributes.put("uid", indigoUser.getUid());
-		personAttributes.put("uidNumber", String.valueOf(indigoUser.getUidNumber()));
-		personAttributes.put("gidNumber", String.valueOf(indigoUser.getGidNumber()));
-		personAttributes.put("homeDirectory", indigoUser.getHomeDirectory());
+		personAttributes.put("indigoId", user.getIndigoId());
+		personAttributes.put("cn", user.getCommonName());
+		personAttributes.put("sn", user.getSurName());
+		personAttributes.put("description", user.getDescription());
+		personAttributes.put("uid", user.getUid());
+		personAttributes.put("uidNumber", String.valueOf(user.getUidNumber()));
+		personAttributes.put("gidNumber", String.valueOf(user.getGidNumber()));
+		personAttributes.put("homeDirectory", user.getHomeDirectory());
 
-		if (indigoUser.getDescription() != null)
-			personAttributes.put("description", indigoUser.getDescription());
-		if (indigoUser.getGecos() != null)
-			personAttributes.put("gecos", indigoUser.getGecos());
-		if (indigoUser.getLoginShell() != null)
-			personAttributes.put("loginShell", indigoUser.getLoginShell());
-		if (indigoUser.getUserPassword() != null)
-			personAttributes.put("userPassword", indigoUser.getUserPassword());
+		if (user.getDescription() != null)
+			personAttributes.put("description", user.getDescription());
+		if (user.getGecos() != null)
+			personAttributes.put("gecos", user.getGecos());
+		if (user.getLoginShell() != null)
+			personAttributes.put("loginShell", user.getLoginShell());
+		if (user.getUserPassword() != null)
+			personAttributes.put("userPassword", user.getUserPassword());
 
 		LdapName userDN = LdapUtils.emptyLdapName();
 		try {
 			userDN = new LdapName(userBase);
-			userDN.add("uid=" + indigoUser.getUid());
+			userDN.add("uid=" + user.getUid());
 			log.debug("Update {}", userDN.toString());
 			ldapTemplate.rebind(userDN, null, personAttributes);
 		} catch (InvalidNameException e) {
@@ -132,11 +132,11 @@ public class LdapIndigoUserDAO implements IndigoUserDAO {
 	}
 
 	@Override
-	public void deleteUser(IndigoUser indigoUser) {
+	public void deleteUser(IndigoUser user) {
 		LdapName userDN = LdapUtils.emptyLdapName();
 		try {
 			userDN = new LdapName(userBase);
-			userDN.add("uid=" + indigoUser.getUid());
+			userDN.add("uid=" + user.getUid());
 			log.debug("Delete {}", userDN.toString());
 			ldapTemplate.unbind(userDN);
 		} catch (InvalidNameException e) {

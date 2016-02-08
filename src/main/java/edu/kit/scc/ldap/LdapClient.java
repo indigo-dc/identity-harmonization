@@ -22,6 +22,7 @@ import org.springframework.ldap.core.support.LdapContextSource;
 import org.springframework.stereotype.Component;
 
 import edu.kit.scc.dto.PosixGroup;
+import edu.kit.scc.dto.PosixUser;
 import edu.kit.scc.dto.IndigoUser;
 
 /**
@@ -69,7 +70,7 @@ public class LdapClient {
 	}
 
 	@Bean
-	LdapIndigoUserDAO ldapUser(LdapTemplate ldapTemplate) {
+	LdapIndigoUserDAO ldapIndigoUser(LdapTemplate ldapTemplate) {
 		LdapIndigoUserDAO ldapUserDAO = new LdapIndigoUserDAO();
 		ldapUserDAO.setLdapTemplate(ldapTemplate);
 		ldapUserDAO.setUserBase(userBase);
@@ -77,7 +78,15 @@ public class LdapClient {
 	}
 
 	@Bean
-	LdapPosixGroupDAO ldapGroup(LdapTemplate ldapTemplate) {
+	LdapPosixUserDAO ldapPosixUser(LdapTemplate ldapTemplate) {
+		LdapPosixUserDAO ldapUserDAO = new LdapPosixUserDAO();
+		ldapUserDAO.setLdapTemplate(ldapTemplate);
+		ldapUserDAO.setUserBase("");
+		return ldapUserDAO;
+	}
+
+	@Bean
+	LdapPosixGroupDAO ldapPosixGroup(LdapTemplate ldapTemplate) {
 		LdapPosixGroupDAO ldapGroupDAO = new LdapPosixGroupDAO();
 		ldapGroupDAO.setLdapTemplate(ldapTemplate);
 		ldapGroupDAO.setGroupBase(groupBase);
@@ -85,20 +94,23 @@ public class LdapClient {
 	}
 
 	@Autowired
-	private LdapIndigoUserDAO ldapUser;
+	private LdapIndigoUserDAO ldapIndigoUser;
 
 	@Autowired
-	private LdapPosixGroupDAO ldapGroup;
+	private LdapPosixUserDAO ldapPosixUser;
+
+	@Autowired
+	private LdapPosixGroupDAO ldapPosixGroup;
 
 	/**
-	 * Gets the user specified from the LDAP server.
+	 * Gets the INDIGO user specified from the LDAP server.
 	 * 
 	 * @param uid
 	 *            the user's uid
 	 * @return a {@link IndigoUser} with the LDAP user information
 	 */
 	public IndigoUser getIndigoUser(String uid) {
-		List<IndigoUser> userList = ldapUser.getUserDetails(uid);
+		List<IndigoUser> userList = ldapIndigoUser.getUserDetails(uid);
 		IndigoUser user = null;
 
 		if (userList != null && !userList.isEmpty()) {
@@ -109,14 +121,14 @@ public class LdapClient {
 	}
 
 	/**
-	 * Gets the group specified from the LDAP server.
+	 * Gets the POSIX group specified from the LDAP server.
 	 * 
 	 * @param cn
 	 *            the group's common name
 	 * @return a {@link PosixGroup} with the LDAP group information
 	 */
 	public PosixGroup getPosixGroup(String cn) {
-		List<PosixGroup> groupList = ldapGroup.getGroupDetails(cn);
+		List<PosixGroup> groupList = ldapPosixGroup.getGroupDetails(cn);
 		PosixGroup group = null;
 
 		if (groupList != null && !groupList.isEmpty()) {
@@ -127,12 +139,30 @@ public class LdapClient {
 	}
 
 	/**
-	 * Gets all users from the LDAP server.
+	 * Gets the POSIX group specified from the LDAP server.
 	 * 
-	 * @return a {@link List<UserDTO>} with the LDAP user information
+	 * @param gidNumber
+	 *            the group's gidNumber
+	 * @return a {@link PosixGroup} with the LDAP group information
+	 */
+	public PosixGroup getPosixGroup(int gidNumber) {
+		List<PosixGroup> groupList = ldapPosixGroup.getGroupDetails(gidNumber);
+		PosixGroup group = null;
+
+		if (groupList != null && !groupList.isEmpty()) {
+			group = groupList.get(0);
+			log.debug(group.toString());
+		}
+		return group;
+	}
+
+	/**
+	 * Gets all INDIGO users from the LDAP server.
+	 * 
+	 * @return a {@link List<IndigoUser>} with the LDAP user information
 	 */
 	public List<IndigoUser> getIndigoUsers() {
-		List<IndigoUser> userList = ldapUser.getAllUsers();
+		List<IndigoUser> userList = ldapIndigoUser.getAllUsers();
 		for (int i = 0; i < userList.size(); i++)
 			log.debug("User {}", ((IndigoUser) userList.get(i)).toString());
 
@@ -140,12 +170,25 @@ public class LdapClient {
 	}
 
 	/**
-	 * Gets all groups from the LDAP server.
+	 * Gets all POSIX users from the LDAP server.
 	 * 
-	 * @return a {@link List<GroupDTO>} with the LDAP group information
+	 * @return a {@link List<PosixUser>} with the LDAP user information
+	 */
+	public List<PosixUser> getPosixUsers() {
+		List<PosixUser> userList = ldapPosixUser.getAllUsers();
+		for (int i = 0; i < userList.size(); i++)
+			log.debug("User {}", ((PosixUser) userList.get(i)).toString());
+
+		return userList;
+	}
+
+	/**
+	 * Gets all POSIX groups from the LDAP server.
+	 * 
+	 * @return a {@link List<PosixGroup>} with the LDAP group information
 	 */
 	public List<PosixGroup> getPosixGroups() {
-		List<PosixGroup> groupList = ldapGroup.getAllGroups();
+		List<PosixGroup> groupList = ldapPosixGroup.getAllGroups();
 		for (int i = 0; i < groupList.size(); i++)
 			log.debug("Group {}", ((PosixGroup) groupList.get(i)).toString());
 
@@ -153,7 +196,7 @@ public class LdapClient {
 	}
 
 	/**
-	 * Creates a new LDAP INDIGO POSIX user.
+	 * Creates a new LDAP INDIGO user.
 	 * 
 	 * @param uid
 	 *            the user's uid
@@ -175,8 +218,9 @@ public class LdapClient {
 	 *            the user's login shell
 	 * @param userPassword
 	 *            the user's password
+	 * @return the created {@link IndigoUser}
 	 */
-	public void createIndigoUser(String uid, String cn, String sn, String indigoId, int uidNumber, int gidNumber,
+	public IndigoUser createIndigoUser(String uid, String cn, String sn, String indigoId, int uidNumber, int gidNumber,
 			String homeDirectory, String description, String gecos, String loginShell, String userPassword) {
 		IndigoUser user = new IndigoUser();
 		user.setCommonName(cn);
@@ -189,12 +233,15 @@ public class LdapClient {
 		user.setUidNumber(uidNumber);
 		user.setHomeDirectory(homeDirectory);
 		user.setLoginShell(loginShell);
-		user.setUserPassword(userPassword);
-		ldapUser.insertUser(user);
+		if (userPassword != null)
+			user.setUserPassword(userPassword.getBytes());
+		ldapIndigoUser.insertUser(user);
+
+		return user;
 	}
 
 	/**
-	 * Updates a specific LDAP POSIX user.
+	 * Updates a specific LDAP INDIGO user.
 	 * 
 	 * @param uid
 	 *            the user's uid
@@ -216,8 +263,9 @@ public class LdapClient {
 	 *            the user's login shell
 	 * @param userPassword
 	 *            the user's password
+	 * @return the updated {@link IndigoUser}
 	 */
-	public void updateIndigoUser(String uid, String cn, String sn, String indigoId, int uidNumber, int gidNumber,
+	public IndigoUser updateIndigoUser(String uid, String cn, String sn, String indigoId, int uidNumber, int gidNumber,
 			String homeDirectory, String description, String gecos, String loginShell, String userPassword) {
 		IndigoUser user = new IndigoUser();
 		user.setCommonName(cn);
@@ -230,8 +278,11 @@ public class LdapClient {
 		user.setUidNumber(uidNumber);
 		user.setHomeDirectory(homeDirectory);
 		user.setLoginShell(loginShell);
-		user.setUserPassword(userPassword);
-		ldapUser.updateUser(user);
+		if (userPassword != null)
+			user.setUserPassword(userPassword.getBytes());
+		ldapIndigoUser.updateUser(user);
+
+		return user;
 	}
 
 	/**
@@ -243,7 +294,19 @@ public class LdapClient {
 	public void deleteUser(String uid) {
 		IndigoUser user = new IndigoUser();
 		user.setUid(uid);
-		ldapUser.deleteUser(user);
+		ldapPosixUser.deleteUser(user);
+	}
+
+	/**
+	 * Deletes a specific INDIGO LDAP user.
+	 * 
+	 * @param uid
+	 *            the user's uid
+	 */
+	public void deleteIndigoUser(String uid) {
+		IndigoUser user = new IndigoUser();
+		user.setUid(uid);
+		ldapIndigoUser.deleteUser(user);
 	}
 
 	/**
@@ -257,15 +320,19 @@ public class LdapClient {
 	 *            group's description
 	 * @param the
 	 *            group's user password
+	 * @return the created {@link PosixGroup}
 	 * 
 	 */
-	public void createPosixGroup(String cn, int gidNumber, String description, String userPassword) {
+	public PosixGroup createPosixGroup(String cn, int gidNumber, String description, String userPassword) {
 		PosixGroup group = new PosixGroup();
 		group.setCommonName(cn);
 		group.setGidNumber(gidNumber);
 		group.setDescription(description);
-		group.setUserPassword(userPassword);
-		ldapGroup.insertGroup(group);
+		if (userPassword != null)
+			group.setUserPassword(userPassword.getBytes());
+		ldapPosixGroup.insertGroup(group);
+
+		return group;
 	}
 
 	/**
@@ -279,15 +346,18 @@ public class LdapClient {
 	 *            group's description
 	 * @param the
 	 *            group's user password
-	 * 
+	 * @return the updated {@link PosixGroup}
 	 */
-	public void updatePosixGroup(String cn, int gidNumber, String description, String userPassword) {
+	public PosixGroup updatePosixGroup(String cn, int gidNumber, String description, String userPassword) {
 		PosixGroup group = new PosixGroup();
 		group.setCommonName(cn);
 		group.setGidNumber(gidNumber);
 		group.setDescription(description);
-		group.setUserPassword(userPassword);
-		ldapGroup.updateGroup(group);
+		if (userPassword != null)
+			group.setUserPassword(userPassword.getBytes());
+		ldapPosixGroup.updateGroup(group);
+
+		return group;
 	}
 
 	/**
@@ -299,7 +369,7 @@ public class LdapClient {
 	public void deleteGroup(String cn) {
 		PosixGroup group = new PosixGroup();
 		group.setCommonName(cn);
-		ldapGroup.deleteGroup(group);
+		ldapPosixGroup.deleteGroup(group);
 	}
 
 	/**
@@ -313,25 +383,63 @@ public class LdapClient {
 	public void addGroupMember(String cn, String memberUid) {
 		PosixGroup group = new PosixGroup();
 		group.setCommonName(cn);
-		ldapGroup.addMember(group, memberUid);
+		ldapPosixGroup.addMember(group, memberUid);
 	}
 
 	/**
-	 * Generates a non-conflicting group id.
+	 * Compares two POSIX LDAP groups.
+	 * 
+	 * @param {@link
+	 * 			PosixGroup} group one
+	 * @param {@link
+	 * 			PosixGroup} group two
+	 * @return true if groups are equal (name and gidNumber)
+	 * 
+	 */
+	public boolean equalGroups(PosixGroup group1, PosixGroup group2) {
+		if (group1.getGidNumber() == group2.getGidNumber())
+			if (group1.getCommonName().equals(group2.getCommonName()))
+				return true;
+		return false;
+	}
+
+	/**
+	 * Generates a non-conflicting group id number.
 	 * 
 	 * @return a new int gidNumber
 	 */
-	public int generateGroupId() {
+	public int generateGroupIdNumber() {
 		int max = 99999;
 		int min = 10000;
 		Random rand = new Random();
 		ArrayList<Integer> existingGidNumbers = new ArrayList<Integer>();
-		List<PosixGroup> groups = ldapGroup.getAllGroups();
+		List<PosixGroup> groups = ldapPosixGroup.getAllGroups();
 		for (PosixGroup group : groups)
 			existingGidNumbers.add(group.getGidNumber());
 
 		int randomInt = rand.nextInt((max - min) + 1) + min;
 		while (existingGidNumbers.contains(randomInt))
+			randomInt = rand.nextInt((max - min) + 1) + min;
+
+		return randomInt;
+	}
+
+	/**
+	 * Generates a non-conflicting user id number.
+	 * 
+	 * @return a new int uidNumber
+	 */
+	public int generateUserIdNumber() {
+		int max = 99999;
+		int min = 10000;
+		Random rand = new Random();
+		ArrayList<Integer> existingUidNumbers = new ArrayList<Integer>();
+		List<PosixUser> users = ldapPosixUser.getAllUsers();
+		for (PosixUser user : users)
+			existingUidNumbers.add(user.getUidNumber());
+
+		int randomInt = rand.nextInt((max - min) + 1) + min;
+		while (existingUidNumbers.contains(randomInt))
 			randomInt = rand.nextInt((max - min) + 1) + min;
 
 		return randomInt;

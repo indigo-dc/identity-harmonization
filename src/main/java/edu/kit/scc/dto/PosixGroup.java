@@ -8,6 +8,7 @@
  */
 package edu.kit.scc.dto;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class PosixGroup {
@@ -16,7 +17,7 @@ public class PosixGroup {
 	int gidNumber;
 	List<String> memberUids;
 	String description;
-	String userPassword;
+	byte[] userPassword;
 
 	public String getCommonName() {
 		return commonName;
@@ -50,11 +51,11 @@ public class PosixGroup {
 		this.description = description;
 	}
 
-	public String getUserPassword() {
+	public byte[] getUserPassword() {
 		return userPassword;
 	}
 
-	public void setUserPassword(String userPassword) {
+	public void setUserPassword(byte[] userPassword) {
 		this.userPassword = userPassword;
 	}
 
@@ -63,6 +64,6 @@ public class PosixGroup {
 		return "PosixGroup [" + (commonName != null ? "commonName=" + commonName + ", " : "") + "gidNumber=" + gidNumber
 				+ ", " + (memberUids != null ? "memberUids=" + memberUids + ", " : "")
 				+ (description != null ? "description=" + description + ", " : "")
-				+ (userPassword != null ? "userPassword=" + userPassword : "") + "]";
+				+ (userPassword != null ? "userPassword=" + Arrays.toString(userPassword) : "") + "]";
 	}
 }

@@ -8,7 +8,7 @@
  */
 package edu.kit.scc.test.ldap;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -50,7 +50,8 @@ public class LdapClientTest {
 		int uidNumber = 6001;
 		int gidNumber = 3333;
 
-		ldapClient.createIndigoUser(uid, cn, sn, uid, uidNumber, gidNumber, homeDirectory, description, null, null, null);
+		ldapClient.createIndigoUser(uid, cn, sn, uid, uidNumber, gidNumber, homeDirectory, description, null, null,
+				null);
 	}
 
 	@Test
@@ -72,7 +73,8 @@ public class LdapClientTest {
 		int uidNumber = 6001;
 		int gidNumber = 3333;
 
-		ldapClient.updateIndigoUser(uid, cn, sn, uid, uidNumber, gidNumber, homeDirectory, description, null, null, null);
+		ldapClient.updateIndigoUser(uid, cn, sn, uid, uidNumber, gidNumber, homeDirectory, description, null, null,
+				null);
 	}
 
 	@Test
@@ -91,7 +93,7 @@ public class LdapClientTest {
 
 	@Test
 	public void g_deleteLdapUserTest() {
-		ldapClient.deleteUser("newUser");
+		ldapClient.deleteIndigoUser("newUser");
 	}
 
 	@Test
@@ -111,6 +113,13 @@ public class LdapClientTest {
 
 	@Test
 	public void getNewGidNumber() {
-		log.debug("{}", ldapClient.generateGroupId());
+		log.debug("{}", ldapClient.generateGroupIdNumber());
+	}
+
+	@Test
+	public void groupEqualityTest() {
+
+		assertTrue(ldapClient.equalGroups(ldapClient.getPosixGroup(2001), ldapClient.getPosixGroup("user")));
+
 	}
 }

@@ -8,6 +8,8 @@
  */
 package edu.kit.scc.dto;
 
+import java.util.Arrays;
+
 public class PosixUser {
 
 	String uid;
@@ -17,7 +19,7 @@ public class PosixUser {
 	String description;
 	String gecos;
 	String loginShell;
-	String userPassword;
+	byte[] userPassword;
 
 	int uidNumber;
 	int gidNumber;
@@ -38,11 +40,11 @@ public class PosixUser {
 		this.loginShell = loginShell;
 	}
 
-	public String getUserPassword() {
+	public byte[] getUserPassword() {
 		return userPassword;
 	}
 
-	public void setUserPassword(String userPassword) {
+	public void setUserPassword(byte[] userPassword) {
 		this.userPassword = userPassword;
 	}
 
@@ -111,7 +113,7 @@ public class PosixUser {
 				+ (description != null ? "description=" + description + ", " : "")
 				+ (gecos != null ? "gecos=" + gecos + ", " : "")
 				+ (loginShell != null ? "loginShell=" + loginShell + ", " : "")
-				+ (userPassword != null ? "userPassword=" + userPassword + ", " : "") + "uidNumber=" + uidNumber
-				+ ", gidNumber=" + gidNumber + "]";
+				+ (userPassword != null ? "userPassword=" + Arrays.toString(userPassword) + ", " : "") + "uidNumber="
+				+ uidNumber + ", gidNumber=" + gidNumber + "]";
 	}
 }

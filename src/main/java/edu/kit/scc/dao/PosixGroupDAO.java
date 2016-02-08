@@ -17,11 +17,9 @@ public interface PosixGroupDAO {
 
 	public List<PosixGroup> getGroupDetails(String commonName);
 
-	public void insertGroup(PosixGroup groupDTO);
+	public void insertGroup(PosixGroup group);
 
-	public void updateGroup(PosixGroup groupDTO);
+	public void updateGroup(PosixGroup group);
 
-	public void deleteGroup(PosixGroup groupDTO);
-
-	public void addMember(PosixGroup groupDTO, String memberUid);
+	public void deleteGroup(PosixGroup group);
 }

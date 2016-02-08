@@ -10,16 +10,16 @@ package edu.kit.scc.dao;
 
 import java.util.List;
 
-import edu.kit.scc.dto.IndigoUser;
+import edu.kit.scc.dto.PosixUser;
 
-public interface IndigoUserDAO {
-	public List<IndigoUser> getAllUsers();
+public interface PosixUserDAO {
+	public List<PosixUser> getAllUsers();
 
-	public List<IndigoUser> getUserDetails(String uid);
+	public List<PosixUser> getUserDetails(String uid);
 
-	public void insertUser(IndigoUser user);
+	public void insertUser(PosixUser user);
 
-	public void updateUser(IndigoUser user);
+	public void updateUser(PosixUser user);
 
-	public void deleteUser(IndigoUser user);
+	public void deleteUser(PosixUser user);
 }

@@ -25,9 +25,9 @@ import org.slf4j.LoggerFactory;
 import com.nimbusds.oauth2.sdk.id.Subject;
 import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 
+import edu.kit.scc.dto.IndigoUser;
 import edu.kit.scc.scim.ScimUser.Address;
 import edu.kit.scc.scim.ScimUser.Email;
-import edu.kit.scc.scim.ScimUser.Group;
 import edu.kit.scc.scim.ScimUser.Meta;
 import edu.kit.scc.scim.ScimUser.Name;
 import edu.kit.scc.scim.ScimUser.PhoneNumber;
@@ -37,6 +37,67 @@ public class ScimUserAttributeMapper {
 
 	private static final Logger log = LoggerFactory.getLogger(ScimUserAttributeMapper.class);
 
+	public IndigoUser mapToIndigoUser(ScimUser scimUser) {
+		IndigoUser user = new IndigoUser();
+
+		user.setIndigoId(scimUser.getExternalId());
+		user.setUid(scimUser.getUserName());
+
+		Name name = scimUser.getName();
+		user.setCommonName(name.getGivenName());
+		user.setSurName(name.getFamilyName());
+
+		if (scimUser.getMeta() != null) {
+			if (scimUser.getMeta().get("homeDirectory") != null)
+				user.setHomeDirectory(scimUser.getMeta().get("homeDirectory"));
+			if (scimUser.getMeta().get("gecos") != null)
+				user.setGecos(scimUser.getMeta().get("gecos"));
+			if (scimUser.getMeta().get("loginShell") != null)
+				user.setLoginShell(scimUser.getMeta().get("loginShell"));
+			if (scimUser.getMeta().get("description") != null)
+				user.setDescription(scimUser.getMeta().get("description"));
+			if (scimUser.getMeta().get("gidNumber") != null) {
+				user.setGidNumber(Integer.valueOf(scimUser.getMeta().get("gidNumber")));
+			}
+			if (scimUser.getMeta().get("uidNumber") != null) {
+				user.setUidNumber(Integer.valueOf(scimUser.getMeta().get("gidNumber")));
+			}
+		}
+
+		if (scimUser.getPassword() != null)
+			user.setUserPassword(scimUser.getPassword().getBytes());
+
+		return user;
+	}
+
+	public ScimUser mapFromIndigoUser(IndigoUser user) {
+		ScimUser scimUser = new ScimUser();
+		scimUser.setSchemas(Arrays.asList(scimUser.USER_SCHEMA_2_0));
+
+		scimUser.setUserName(user.getUid());
+		scimUser.setExternalId(user.getIndigoId());
+		scimUser.setId(String.valueOf(user.getUidNumber()));
+
+		Name name = new Name();
+		name.setFamilyName(user.getSurName());
+		name.setGivenName(user.getCommonName());
+		scimUser.setName(name);
+
+		Meta meta = new Meta();
+		meta.put("homeDirectory", user.getHomeDirectory());
+		meta.put("gecos", user.getGecos());
+		meta.put("loginShell", user.getLoginShell());
+		meta.put("description", user.getDescription());
+		meta.put("gidNumber", String.valueOf(user.getGidNumber()));
+		meta.put("uidNumber", String.valueOf(user.getUidNumber()));
+
+		if (user.getUserPassword() != null)
+			scimUser.setPassword(new String(user.getUserPassword()));
+
+		return scimUser;
+	}
+
+	@Deprecated
 	public ScimUser mapFromRegAppQuery(String query) {
 		ScimUser scimUser = new ScimUser();
 		scimUser.setSchemas(Arrays.asList(scimUser.USER_SCHEMA_2_0));
@@ -74,6 +135,7 @@ public class ScimUserAttributeMapper {
 		return scimUser;
 	}
 
+	@Deprecated
 	public ScimUser mapFromUserInfo(UserInfo userInfo) {
 		ScimUser scimUser = new ScimUser();
 		scimUser.setSchemas(Arrays.asList(scimUser.USER_SCHEMA_2_0));
@@ -195,10 +257,10 @@ public class ScimUserAttributeMapper {
 		List<edu.kit.scc.scim.ScimUser1_0.Group> groups = scim1User.getGroups();
 		if (groups != null) {
 			if (scimUser.getGroups() == null)
-				scimUser.setGroups(new ArrayList<Group>());
+				scimUser.setGroups(new ArrayList<ScimGroup>());
 
 			for (edu.kit.scc.scim.ScimUser1_0.Group group : groups) {
-				Group newGroup = new Group();
+				ScimGroup newGroup = new ScimGroup();
 				newGroup.setDisplay(group.getDisplay());
 				newGroup.setValue(group.getValue());
 				scimUser.getGroups().add(newGroup);
@@ -238,6 +300,7 @@ public class ScimUserAttributeMapper {
 	// TODO
 	// for now only user name and groups are checked
 	// user info from IdP have precedence, groups are added from SCIM provider
+	@Deprecated
 	public ScimUser merge(ScimUser scimUserFromScimProvider, ScimUser scimUserFromIdP) {
 		if (scimUserFromIdP == null) {
 			log.warn("SCIM user from IdP null");
@@ -263,7 +326,7 @@ public class ScimUserAttributeMapper {
 			}
 		}
 
-		List<Group> groups = scimUserFromScimProvider.getGroups();
+		List<ScimGroup> groups = scimUserFromScimProvider.getGroups();
 		if (groups != null && !groups.isEmpty()) {
 			if (aggregate.getGroups() == null) {
 				aggregate.setGroups(groups);

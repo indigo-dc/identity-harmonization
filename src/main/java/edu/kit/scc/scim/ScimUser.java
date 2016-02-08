@@ -279,41 +279,6 @@ public class ScimUser {
 	}
 
 	@JsonInclude(JsonInclude.Include.NON_NULL)
-	public static class Group {
-		private String value, $ref, display;
-
-		public String getValue() {
-			return value;
-		}
-
-		public void setValue(String value) {
-			this.value = value;
-		}
-
-		public String get$ref() {
-			return $ref;
-		}
-
-		public void set$ref(String $ref) {
-			this.$ref = $ref;
-		}
-
-		public String getDisplay() {
-			return display;
-		}
-
-		public void setDisplay(String display) {
-			this.display = display;
-		}
-
-		@Override
-		public String toString() {
-			return "Group [" + (value != null ? "value=" + value + ", " : "")
-					+ ($ref != null ? "$ref=" + $ref + ", " : "") + (display != null ? "display=" + display : "") + "]";
-		}
-	}
-
-	@JsonInclude(JsonInclude.Include.NON_NULL)
 	public static class x509Certificate {
 		private String value;
 
@@ -357,7 +322,7 @@ public class ScimUser {
 	private List<PhoneNumber> phoneNumbers;
 	private List<Ims> ims;
 	private List<Photo> photos;
-	private List<Group> groups;
+	private List<ScimGroup> groups;
 	private Meta meta;
 
 	public Name getName() {
@@ -520,11 +485,11 @@ public class ScimUser {
 		this.photos = photos;
 	}
 
-	public List<Group> getGroups() {
+	public List<ScimGroup> getGroups() {
 		return groups;
 	}
 
-	public void setGroups(List<Group> groups) {
+	public void setGroups(List<ScimGroup> groups) {
 		this.groups = groups;
 	}
 

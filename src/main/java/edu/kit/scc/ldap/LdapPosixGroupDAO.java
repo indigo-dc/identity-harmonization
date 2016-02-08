@@ -58,25 +58,33 @@ public class LdapPosixGroupDAO implements PosixGroupDAO {
 		return ldapTemplate.search("", andFilter.encode(), new LdapPosixGroupAttributeMapper());
 	}
 
+	public List<PosixGroup> getGroupDetails(int gidNumber) {
+		AndFilter andFilter = new AndFilter();
+		andFilter.and(new EqualsFilter("objectclass", "posixGroup")).and(new EqualsFilter("gidNumber", gidNumber));
+		log.debug("LDAP query {}", andFilter.encode());
+
+		return ldapTemplate.search("", andFilter.encode(), new LdapPosixGroupAttributeMapper());
+	}
+
 	@Override
-	public void insertGroup(PosixGroup posixGroup) {
+	public void insertGroup(PosixGroup group) {
 		BasicAttribute posixGroupBasicAttribute = new BasicAttribute("objectclass");
 		posixGroupBasicAttribute.add("posixGroup");
 
 		Attributes posixGroupAttributes = new BasicAttributes();
 		posixGroupAttributes.put(posixGroupBasicAttribute);
-		posixGroupAttributes.put("cn", posixGroup.getCommonName());
-		posixGroupAttributes.put("gidNumber", String.valueOf(posixGroup.getGidNumber()));
+		posixGroupAttributes.put("cn", group.getCommonName());
+		posixGroupAttributes.put("gidNumber", String.valueOf(group.getGidNumber()));
 
-		if (posixGroup.getUserPassword() != null)
-			posixGroupAttributes.put("userPassword", posixGroup.getUserPassword());
-		if (posixGroup.getDescription() != null)
-			posixGroupAttributes.put("description", posixGroup.getDescription());
+		if (group.getUserPassword() != null)
+			posixGroupAttributes.put("userPassword", group.getUserPassword());
+		if (group.getDescription() != null)
+			posixGroupAttributes.put("description", group.getDescription());
 
 		LdapName newGroupDN = LdapUtils.emptyLdapName();
 		try {
 			newGroupDN = new LdapName(groupBase);
-			newGroupDN.add("cn=" + posixGroup.getCommonName());
+			newGroupDN.add("cn=" + group.getCommonName());
 			log.debug("Insert {}", newGroupDN.toString());
 			ldapTemplate.bind(newGroupDN, null, posixGroupAttributes);
 		} catch (InvalidNameException e) {
@@ -85,24 +93,24 @@ public class LdapPosixGroupDAO implements PosixGroupDAO {
 	}
 
 	@Override
-	public void updateGroup(PosixGroup posixGroup) {
+	public void updateGroup(PosixGroup group) {
 		BasicAttribute posixGroupBasicAttribute = new BasicAttribute("objectclass");
 		posixGroupBasicAttribute.add("posixGroup");
 
 		Attributes posixGroupAttributes = new BasicAttributes();
 		posixGroupAttributes.put(posixGroupBasicAttribute);
-		posixGroupAttributes.put("cn", posixGroup.getCommonName());
-		posixGroupAttributes.put("gidNumber", String.valueOf(posixGroup.getGidNumber()));
+		posixGroupAttributes.put("cn", group.getCommonName());
+		posixGroupAttributes.put("gidNumber", String.valueOf(group.getGidNumber()));
 
-		if (posixGroup.getUserPassword() != null)
-			posixGroupAttributes.put("userPassword", posixGroup.getUserPassword());
-		if (posixGroup.getDescription() != null)
-			posixGroupAttributes.put("description", posixGroup.getDescription());
+		if (group.getUserPassword() != null)
+			posixGroupAttributes.put("userPassword", group.getUserPassword());
+		if (group.getDescription() != null)
+			posixGroupAttributes.put("description", group.getDescription());
 
 		LdapName groupDN = LdapUtils.emptyLdapName();
 		try {
 			groupDN = new LdapName(groupBase);
-			groupDN.add("cn=" + posixGroup.getCommonName());
+			groupDN.add("cn=" + group.getCommonName());
 			log.debug("Update {}", groupDN.toString());
 			ldapTemplate.bind(groupDN, null, posixGroupAttributes);
 		} catch (InvalidNameException e) {
@@ -111,11 +119,11 @@ public class LdapPosixGroupDAO implements PosixGroupDAO {
 	}
 
 	@Override
-	public void deleteGroup(PosixGroup posixGroup) {
+	public void deleteGroup(PosixGroup group) {
 		LdapName groupDN = LdapUtils.emptyLdapName();
 		try {
 			groupDN = new LdapName(groupBase);
-			groupDN.add("cn=" + posixGroup.getCommonName());
+			groupDN.add("cn=" + group.getCommonName());
 			log.debug("Delete {}", groupDN.toString());
 			ldapTemplate.unbind(groupDN);
 		} catch (InvalidNameException e) {
@@ -123,14 +131,13 @@ public class LdapPosixGroupDAO implements PosixGroupDAO {
 		}
 	}
 
-	@Override
-	public void addMember(PosixGroup posixGroup, String memberUid) {
+	public void addMember(PosixGroup group, String memberUid) {
 		ModificationItem[] modificationItems = new ModificationItem[] {
 				new ModificationItem(DirContext.ADD_ATTRIBUTE, new BasicAttribute("memberUid", memberUid)) };
 		LdapName groupDN = LdapUtils.emptyLdapName();
 		try {
 			groupDN = new LdapName(groupBase);
-			groupDN.add("cn=" + posixGroup.getCommonName());
+			groupDN.add("cn=" + group.getCommonName());
 			log.debug("Add member {} to {}", memberUid, groupDN.toString());
 			ldapTemplate.modifyAttributes(groupDN, modificationItems);
 		} catch (InvalidNameException e) {

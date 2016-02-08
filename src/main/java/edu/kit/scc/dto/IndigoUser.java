@@ -8,6 +8,8 @@
  */
 package edu.kit.scc.dto;
 
+import java.util.Arrays;
+
 public class IndigoUser extends PosixUser {
 
 	String indigoId;
@@ -30,7 +32,7 @@ public class IndigoUser extends PosixUser {
 				+ (description != null ? "description=" + description + ", " : "")
 				+ (gecos != null ? "gecos=" + gecos + ", " : "")
 				+ (loginShell != null ? "loginShell=" + loginShell + ", " : "")
-				+ (userPassword != null ? "userPassword=" + userPassword + ", " : "") + "uidNumber=" + uidNumber
-				+ ", gidNumber=" + gidNumber + "]";
+				+ (userPassword != null ? "userPassword=" + Arrays.toString(userPassword) + ", " : "") + "uidNumber="
+				+ uidNumber + ", gidNumber=" + gidNumber + "]";
 	}
 }

@@ -14,48 +14,47 @@ import javax.naming.directory.Attributes;
 
 import org.springframework.ldap.core.AttributesMapper;
 
-import edu.kit.scc.dto.IndigoUser;
+import edu.kit.scc.dto.PosixUser;
 
-public class LdapIndigoUserAttributeMapper implements AttributesMapper<IndigoUser> {
+public class LdapPosixUserAttributeMapper implements AttributesMapper<PosixUser> {
 
 	@Override
-	public IndigoUser mapFromAttributes(Attributes attributes) throws NamingException {
-		IndigoUser indigoUser = new IndigoUser();
-		String indigoId = (String) attributes.get("indigoId").get();
-		if (indigoId != null)
-			indigoUser.setIndigoId(indigoId);
+	public PosixUser mapFromAttributes(Attributes attributes) throws NamingException {
+		PosixUser posixUser = new PosixUser();
+
 		String uid = (String) attributes.get("uid").get();
 		if (uid != null)
-			indigoUser.setUid(uid);
+			posixUser.setUid(uid);
 		String commonName = (String) attributes.get("cn").get();
 		if (commonName != null)
-			indigoUser.setCommonName(commonName);
+			posixUser.setCommonName(commonName);
 		String surName = (String) attributes.get("sn").get();
 		if (surName != null)
-			indigoUser.setSurName(surName);
+			posixUser.setSurName(surName);
 		String homeDirectory = (String) attributes.get("homeDirectory").get();
 		if (homeDirectory != null)
-			indigoUser.setHomeDirectory(homeDirectory);
+			posixUser.setHomeDirectory(homeDirectory);
 		Attribute gidNumber = attributes.get("gidNumber");
 		if (gidNumber != null)
-			indigoUser.setGidNumber(Integer.valueOf((String) gidNumber.get()));
+			posixUser.setGidNumber(Integer.valueOf((String) gidNumber.get()));
 		Attribute uidNumber = attributes.get("uidNumber");
 		if (uidNumber != null)
-			indigoUser.setUidNumber(Integer.valueOf((String) uidNumber.get()));
+			posixUser.setUidNumber(Integer.valueOf((String) uidNumber.get()));
 
 		Attribute description = attributes.get("description");
 		if (description != null)
-			indigoUser.setDescription((String) description.get());
+			posixUser.setDescription((String) description.get());
 		Attribute userPassword = attributes.get("userPassword");
 		if (userPassword != null)
-			indigoUser.setUserPassword((byte[]) userPassword.get());
+			posixUser.setUserPassword((byte[]) userPassword.get());
 		Attribute gecos = attributes.get("gecos");
 		if (gecos != null)
-			indigoUser.setGecos((String) gecos.get());
+			posixUser.setGecos((String) gecos.get());
 		Attribute loginShell = attributes.get("loginShell");
 		if (loginShell != null)
-			indigoUser.setLoginShell((String) loginShell.get());
+			posixUser.setLoginShell((String) loginShell.get());
 
-		return indigoUser;
+		return posixUser;
 	}
+
 }
