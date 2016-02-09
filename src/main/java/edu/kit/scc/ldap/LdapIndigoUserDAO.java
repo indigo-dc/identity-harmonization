@@ -18,6 +18,7 @@ import javax.naming.ldap.LdapName;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ldap.NameAlreadyBoundException;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.filter.AndFilter;
 import org.springframework.ldap.filter.EqualsFilter;
@@ -88,8 +89,10 @@ public class LdapIndigoUserDAO implements IndigoUserDAO {
 			newUserDN.add("uid=" + user.getUid());
 			log.debug("Insert {}", newUserDN.toString());
 			ldapTemplate.bind(newUserDN, null, personAttributes);
+		} catch (NameAlreadyBoundException e) {
+			log.error("ERROR {}", e.getMessage());
 		} catch (InvalidNameException e) {
-			e.printStackTrace();
+			log.error("ERROR {}", e.getMessage());
 		}
 	}
 

@@ -8,7 +8,8 @@
  */
 package edu.kit.scc.scim;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -34,9 +35,9 @@ public class ScimService {
 	@Autowired
 	private LdapClient ldapClient;
 
-	private static final String DEFAULT_HOME_DIRECTORY = "/home";
-	private static final String DEFAULT_DESCRIPTION = "INDIGO-DataCloud";
-	private static final String DEFAULT_INDIGO_GROUP = "indigo";
+	public static final String DEFAULT_HOME_DIRECTORY = "/home";
+	public static final String DEFAULT_DESCRIPTION = "INDIGO-DataCloud";
+	public static final String DEFAULT_INDIGO_GROUP = "indigo";
 
 	/**
 	 * Creates a new LDAP INDIGO user according to the provided SCIM object.
@@ -47,63 +48,127 @@ public class ScimService {
 	 */
 	public ScimUser createLdapIndigoUser(ScimUser scimUser) {
 		ScimUser createdUser = null;
+		ScimUserAttributeMapper userMapper = new ScimUserAttributeMapper();
+		ScimGroupAttributeMapper groupMapper = new ScimGroupAttributeMapper();
 
-		ScimUserAttributeMapper mapper = new ScimUserAttributeMapper();
-		IndigoUser indigoUser = mapper.mapToIndigoUser(scimUser);
+		IndigoUser indigoUser = userMapper.mapToIndigoUser(scimUser);
 
-		if (indigoUser.getUid() == null)
-			return null;
-		if (indigoUser.getIndigoId() == null)
-			return null;
-		if (indigoUser.getCommonName() == null)
-			return null;
-		if (indigoUser.getSurName() == null)
-			return null;
-		if (indigoUser.getHomeDirectory() == null)
-			indigoUser.setHomeDirectory(DEFAULT_HOME_DIRECTORY + "/" + indigoUser.getUid());
-		if (indigoUser.getDescription() == null)
-			indigoUser.setDescription(DEFAULT_DESCRIPTION);
+		if (indigoUser == null)
+			return createdUser;
 
-		int claimedPrimaryGidNumber = indigoUser.getGidNumber();
-		int clamiedPrimaryUidNumber = indigoUser.getUidNumber();
 		List<ScimGroup> scimGroups = scimUser.getGroups();
 
-		List<PosixGroup> localGroups = ldapClient.getPosixGroups();
+		int clamiedPrimaryUidNumber = indigoUser.getUidNumber();
+		if (clamiedPrimaryUidNumber != 0) {
+			// user claims to have local user id
+			log.debug("User claimed local uidNumber {}", clamiedPrimaryUidNumber);
+			createdUser = createOrGetDefaultUser(indigoUser);
+			// - verify local user
+			// - modify created user's uidNumber
+		} else {
+			// user has no local user id, use default
+			log.debug("User has no local uidNumber");
+			createdUser = createOrGetDefaultUser(indigoUser);
+		}
 
-		boolean matchingPrimaryGidNumber = false;
 		if (scimGroups != null) {
-			for (ScimGroup scimGroup : scimGroups) {
-				boolean matchingLocalGroup = false;
+			HashMap<String, Integer> verifiedLocalGroups = getVerifiedLocalGroups(scimGroups);
+			for (String group : verifiedLocalGroups.keySet()) {
+				log.debug("Add user {} to group {}", createdUser.getId(), group);
+				ldapClient.addGroupMember(group, createdUser.getId());
+			}
+			int claimedPrimaryGidNumber = indigoUser.getGidNumber();
+			if (claimedPrimaryGidNumber != 0) {
+				// user claims to have local primary group
+				log.debug("User claimed primary group {}", claimedPrimaryGidNumber);
+			} else {
+				// user claims to have no local primary group
+				log.debug("User has no primary local group, use default {}", indigoUser.getGidNumber());
+			}
+		}
+
+		List<PosixGroup> userGroups = ldapClient.getUserGroups(createdUser.getUserName());
+		createdUser.setGroups(new ArrayList<ScimGroup>());
+		for (PosixGroup group : userGroups) {
+			log.debug("User is member of group {}", group.toString());
+			createdUser.getGroups().add(groupMapper.mapFromPosixGroup(group));
+		}
+
+		return createdUser;
+	}
+
+	private HashMap<String, Integer> getVerifiedLocalGroups(List<ScimGroup> groups) {
+		HashMap<String, Integer> localGroups = new HashMap<String, Integer>();
+
+		if (groups != null) {
+			for (ScimGroup scimGroup : groups) {
 
 				int gidNumber = Integer.valueOf(scimGroup.getValue());
 				String commonName = scimGroup.getDisplay();
 
 				try {
-					matchingLocalGroup = ldapClient.equalGroups(ldapClient.getPosixGroup(gidNumber),
-							ldapClient.getPosixGroup(commonName));
+					if (ldapClient.equalGroups(ldapClient.getPosixGroup(gidNumber),
+							ldapClient.getPosixGroup(commonName))) {
+						log.debug("Found matching local group {} {}", commonName, gidNumber);
+						localGroups.put(commonName, gidNumber);
+					}
 				} catch (Exception e) {
 					log.error("ERROR {}", e.getMessage());
 					e.printStackTrace();
 				}
-
-				if (gidNumber == claimedPrimaryGidNumber)
-					matchingPrimaryGidNumber = true;
-
 			}
 		}
+		return localGroups;
+	}
+
+	private ScimUser createOrGetDefaultUser(IndigoUser indigoUser) {
+		ScimUser user = null;
+		ScimUserAttributeMapper mapper = new ScimUserAttributeMapper();
+		ScimGroup indigoGroup = createOrGetDefaultGroup();
 
 		try {
+			indigoUser.setUidNumber(ldapClient.generateUserIdNumber());
+			indigoUser.setGidNumber(Integer.valueOf(indigoGroup.getValue()));
+			indigoUser.setHomeDirectory(DEFAULT_HOME_DIRECTORY + "/" + indigoUser.getUid());
+
+			log.debug("Create INDIGO user {}", indigoUser.toString());
+
 			IndigoUser ldapUser = ldapClient.createIndigoUser(indigoUser.getUid(), indigoUser.getCommonName(),
 					indigoUser.getSurName(), indigoUser.getIndigoId(), indigoUser.getUidNumber(),
 					indigoUser.getGidNumber(), indigoUser.getHomeDirectory(), indigoUser.getDescription(),
 					indigoUser.getGecos(), indigoUser.getLoginShell(), null);
 
-			createdUser = mapper.mapFromIndigoUser(ldapUser);
+			ldapClient.addGroupMember(indigoGroup.getDisplay(), ldapUser.getUid());
+
+			log.debug("Created LDAP INDIGO user {}", ldapUser.toString());
+
+			user = mapper.mapFromIndigoUser(ldapUser);
 		} catch (Exception e) {
 			log.error("ERROR {}", e.getMessage());
 			// e.printStackTrace();
 		}
-		return createdUser;
+		return user;
+	}
+
+	private ScimGroup createOrGetDefaultGroup() {
+		ScimGroup createdGroup = null;
+		ScimGroupAttributeMapper mapper = new ScimGroupAttributeMapper();
+		try {
+			int gidNumber = ldapClient.generateGroupIdNumber();
+
+			log.debug("Create INDIGO Group {} {}", DEFAULT_INDIGO_GROUP, gidNumber);
+
+			PosixGroup ldapGroup = ldapClient.createPosixGroup(DEFAULT_INDIGO_GROUP, gidNumber, DEFAULT_DESCRIPTION,
+					null);
+
+			log.debug("Created LDAP group {}", ldapGroup.toString());
+
+			createdGroup = mapper.mapFromPosixGroup(ldapGroup);
+		} catch (Exception e) {
+			log.error("ERROR {}", e.getMessage());
+			// e.printStackTrace();
+		}
+		return createdGroup;
 	}
 
 	/**

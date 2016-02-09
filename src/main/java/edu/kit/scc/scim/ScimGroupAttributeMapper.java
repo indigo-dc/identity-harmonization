@@ -21,6 +21,12 @@ public class ScimGroupAttributeMapper {
 		if (group.getDescription() != null)
 			scimGroup.set$ref(group.getDescription());
 
+		// verify required attributes
+		if (scimGroup.getValue() == null)
+			return null;
+		if (scimGroup.getDisplay() == null)
+			return null;
+
 		return scimGroup;
 	}
 

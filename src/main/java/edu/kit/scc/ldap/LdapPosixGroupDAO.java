@@ -20,6 +20,8 @@ import javax.naming.ldap.LdapName;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ldap.AttributeInUseException;
+import org.springframework.ldap.NameAlreadyBoundException;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.filter.AndFilter;
 import org.springframework.ldap.filter.EqualsFilter;
@@ -87,8 +89,10 @@ public class LdapPosixGroupDAO implements PosixGroupDAO {
 			newGroupDN.add("cn=" + group.getCommonName());
 			log.debug("Insert {}", newGroupDN.toString());
 			ldapTemplate.bind(newGroupDN, null, posixGroupAttributes);
+		} catch (NameAlreadyBoundException e) {
+			log.error("ERROR {}", e.getMessage());
 		} catch (InvalidNameException e) {
-			e.printStackTrace();
+			log.error("ERROR {}", e.getMessage());
 		}
 	}
 
@@ -140,8 +144,18 @@ public class LdapPosixGroupDAO implements PosixGroupDAO {
 			groupDN.add("cn=" + group.getCommonName());
 			log.debug("Add member {} to {}", memberUid, groupDN.toString());
 			ldapTemplate.modifyAttributes(groupDN, modificationItems);
+		} catch (AttributeInUseException e) {
+			log.error("ERROR {}", e.getMessage());
 		} catch (InvalidNameException e) {
-			e.printStackTrace();
+			log.error("ERROR {}", e.getMessage());
 		}
+	}
+
+	public List<PosixGroup> getUserGroups(String uid) {
+		AndFilter andFilter = new AndFilter();
+		andFilter.and(new EqualsFilter("objectclass", "posixGroup")).and(new EqualsFilter("memberUid", uid));
+		log.debug("LDAP query {}", andFilter.encode());
+
+		return ldapTemplate.search("", andFilter.encode(), new LdapPosixGroupAttributeMapper());
 	}
 }

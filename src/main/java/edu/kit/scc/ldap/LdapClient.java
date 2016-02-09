@@ -156,6 +156,10 @@ public class LdapClient {
 		return group;
 	}
 
+	public List<PosixGroup> getUserGroups(String uid) {
+		return ldapPosixGroup.getUserGroups(uid);
+	}
+
 	/**
 	 * Gets all INDIGO users from the LDAP server.
 	 * 
@@ -237,7 +241,7 @@ public class LdapClient {
 			user.setUserPassword(userPassword.getBytes());
 		ldapIndigoUser.insertUser(user);
 
-		return user;
+		return getIndigoUser(uid);
 	}
 
 	/**
@@ -282,7 +286,7 @@ public class LdapClient {
 			user.setUserPassword(userPassword.getBytes());
 		ldapIndigoUser.updateUser(user);
 
-		return user;
+		return getIndigoUser(uid);
 	}
 
 	/**
@@ -332,7 +336,7 @@ public class LdapClient {
 			group.setUserPassword(userPassword.getBytes());
 		ldapPosixGroup.insertGroup(group);
 
-		return group;
+		return getPosixGroup(cn);
 	}
 
 	/**
@@ -357,7 +361,7 @@ public class LdapClient {
 			group.setUserPassword(userPassword.getBytes());
 		ldapPosixGroup.updateGroup(group);
 
-		return group;
+		return getPosixGroup(cn);
 	}
 
 	/**

@@ -67,6 +67,16 @@ public class ScimUserAttributeMapper {
 		if (scimUser.getPassword() != null)
 			user.setUserPassword(scimUser.getPassword().getBytes());
 
+		// verify required attributes
+		if (user.getUid() == null)
+			return null;
+		if (user.getIndigoId() == null)
+			return null;
+		if (user.getCommonName() == null)
+			return null;
+		if (user.getSurName() == null)
+			return null;
+
 		return user;
 	}
 
