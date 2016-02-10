@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
 
 import edu.kit.scc.dto.IndigoUser;
 import edu.kit.scc.dto.PosixGroup;
+import edu.kit.scc.dto.PosixUser;
 import edu.kit.scc.ldap.LdapClient;
 
 /**
@@ -63,8 +64,26 @@ public class ScimService {
 			// user claims to have local user id
 			log.debug("User claimed local uidNumber {}", clamiedPrimaryUidNumber);
 			createdUser = createOrGetDefaultUser(indigoUser);
+			log.debug("Created user {}", createdUser.toString());
 			// - verify local user
 			// - modify created user's uidNumber
+			IndigoUser localUser = userMapper.mapToIndigoUser(createdUser);
+			log.debug("Map from {} to {}", createdUser.toString(), localUser.toString());
+
+			PosixUser verifiedLocalUser = getVerifiedLocalUser(clamiedPrimaryUidNumber);
+			log.debug("Found verified local user {}", verifiedLocalUser.toString());
+
+			int verifiedLocalUidNumber = verifiedLocalUser.getUidNumber();
+			String verifiedLocalHomeDirectory = verifiedLocalUser.getHomeDirectory();
+
+			IndigoUser updatedUser = ldapClient.updateIndigoUser(localUser.getUid(), localUser.getCommonName(),
+					localUser.getSurName(), localUser.getIndigoId(), verifiedLocalUidNumber, localUser.getGidNumber(),
+					verifiedLocalHomeDirectory, localUser.getDescription(), localUser.getGecos(),
+					localUser.getLoginShell(),
+					(localUser.getUserPassword() != null ? new String(localUser.getUserPassword()) : null));
+
+			log.debug("Updated user {}", updatedUser.toString());
+			createdUser = userMapper.mapFromIndigoUser(updatedUser);
 		} else {
 			// user has no local user id, use default
 			log.debug("User has no local uidNumber");
@@ -95,6 +114,20 @@ public class ScimService {
 		}
 
 		return createdUser;
+	}
+
+	private PosixUser getVerifiedLocalUser(int claimedPrimaryUidNumber) {
+		PosixUser user = null;
+		List<PosixUser> users = ldapClient.getPosixUsers(claimedPrimaryUidNumber);
+		if (users != null && !users.isEmpty()) {
+			if (users.size() == 1) {
+				user = users.get(0);
+			} else {
+				// multiple users with the same uidNumber
+				user = users.get(0);
+			}
+		}
+		return user;
 	}
 
 	private HashMap<String, Integer> getVerifiedLocalGroups(List<ScimGroup> groups) {
@@ -140,13 +173,14 @@ public class ScimService {
 
 			ldapClient.addGroupMember(indigoGroup.getDisplay(), ldapUser.getUid());
 
-			log.debug("Created LDAP INDIGO user {}", ldapUser.toString());
+			log.debug("Created/got LDAP INDIGO user {}", ldapUser.toString());
 
 			user = mapper.mapFromIndigoUser(ldapUser);
 		} catch (Exception e) {
 			log.error("ERROR {}", e.getMessage());
 			// e.printStackTrace();
 		}
+		log.debug("Created/got user {}", user.toString());
 		return user;
 	}
 
@@ -161,7 +195,7 @@ public class ScimService {
 			PosixGroup ldapGroup = ldapClient.createPosixGroup(DEFAULT_INDIGO_GROUP, gidNumber, DEFAULT_DESCRIPTION,
 					null);
 
-			log.debug("Created LDAP group {}", ldapGroup.toString());
+			log.debug("Created/got LDAP group {}", ldapGroup.toString());
 
 			createdGroup = mapper.mapFromPosixGroup(ldapGroup);
 		} catch (Exception e) {

@@ -46,6 +46,14 @@ public class LdapPosixUserDAO implements PosixUserDAO {
 		return ldapTemplate.search(userBase, "(objectclass=posixAccount)", new LdapPosixUserAttributeMapper());
 	}
 
+	public List<PosixUser> getAllUsers(int uidNumber) {
+		AndFilter andFilter = new AndFilter();
+		andFilter.and(new EqualsFilter("objectclass", "posixAccount")).and(new EqualsFilter("uidNumber", uidNumber));
+		log.debug("LDAP query {}", andFilter.encode());
+
+		return ldapTemplate.search("", andFilter.encode(), new LdapPosixUserAttributeMapper());
+	}
+
 	@Override
 	public List<PosixUser> getUserDetails(String uid) {
 		AndFilter andFilter = new AndFilter();

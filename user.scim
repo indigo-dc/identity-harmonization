@@ -8,6 +8,7 @@
     "givenName":"Barbara"
   },
   "meta":{
-    "gidNumber":"9999"
+    "gidNumber":"9999",
+    "uidNumber":"5555"
   }
 }

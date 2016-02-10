@@ -60,7 +60,7 @@ public class ScimUserAttributeMapper {
 				user.setGidNumber(Integer.valueOf(scimUser.getMeta().get("gidNumber")));
 			}
 			if (scimUser.getMeta().get("uidNumber") != null) {
-				user.setUidNumber(Integer.valueOf(scimUser.getMeta().get("gidNumber")));
+				user.setUidNumber(Integer.valueOf(scimUser.getMeta().get("uidNumber")));
 			}
 		}
 
@@ -95,11 +95,15 @@ public class ScimUserAttributeMapper {
 
 		Meta meta = new Meta();
 		meta.put("homeDirectory", user.getHomeDirectory());
-		meta.put("gecos", user.getGecos());
-		meta.put("loginShell", user.getLoginShell());
-		meta.put("description", user.getDescription());
+		if (user.getGecos() != null)
+			meta.put("gecos", user.getGecos());
+		if (user.getLoginShell() != null)
+			meta.put("loginShell", user.getLoginShell());
+		if (user.getDescription() != null)
+			meta.put("description", user.getDescription());
 		meta.put("gidNumber", String.valueOf(user.getGidNumber()));
 		meta.put("uidNumber", String.valueOf(user.getUidNumber()));
+		scimUser.setMeta(meta);
 
 		if (user.getUserPassword() != null)
 			scimUser.setPassword(new String(user.getUserPassword()));

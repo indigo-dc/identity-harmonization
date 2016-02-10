@@ -187,6 +187,22 @@ public class LdapClient {
 	}
 
 	/**
+	 * Gets all POSIX users from the LDAP server with the specified uidNumber.
+	 * 
+	 * @param udiNumber
+	 *            the users' uidNumber
+	 * 
+	 * @return a {@link List<PosixUser>} with the LDAP user information
+	 */
+	public List<PosixUser> getPosixUsers(int uidNumber) {
+		List<PosixUser> userList = ldapPosixUser.getAllUsers(uidNumber);
+		for (int i = 0; i < userList.size(); i++)
+			log.debug("User {}", ((PosixUser) userList.get(i)).toString());
+
+		return userList;
+	}
+
+	/**
 	 * Gets all POSIX groups from the LDAP server.
 	 * 
 	 * @return a {@link List<PosixGroup>} with the LDAP group information
