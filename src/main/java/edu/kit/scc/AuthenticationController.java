@@ -271,7 +271,7 @@ public class AuthenticationController {
 	}
 
 	@RequestMapping("/login")
-	public String login(Model model) throws UnsupportedEncodingException {
+	public String login(HttpServletResponse response, Model model) throws UnsupportedEncodingException {
 		// String redirectUrl = oauth2AuthorizeUri.replaceAll("/$", "");
 		// redirectUrl += "?response_type=code&scope=openid%20email&client_id=";
 		// redirectUrl += oauth2ClientId;
@@ -283,25 +283,44 @@ public class AuthenticationController {
 				"https://192.168.122.1:8443/SAML2/POST", "sp.scc.kit.edu");
 		try {
 			byte[] xmlBytes = request.getBytes(StandardCharsets.UTF_8);
-			ByteArrayOutputStream byteOutputStream = new ByteArrayOutputStream();
-			DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(byteOutputStream);
-			deflaterOutputStream.write(xmlBytes, 0, xmlBytes.length);
-			deflaterOutputStream.close();
+			log.debug("XML request bytes {}", DatatypeConverter.printHexBinary(xmlBytes));
+//			ByteArrayOutputStream byteOutputStream = new ByteArrayOutputStream();
+//			DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(byteOutputStream);
+//			deflaterOutputStream.write(xmlBytes, 0, xmlBytes.length);
+//			deflaterOutputStream.close();
+//			log.debug("XML deflated request bytes {}",
+//					DatatypeConverter.printHexBinary(byteOutputStream.toByteArray()));
 
 			Base64 base64Encoder = new Base64();
-			byte[] base64EncodedByteArray = base64Encoder.encode(byteOutputStream.toByteArray());
+//			byte[] base64EncodedByteArray = base64Encoder.encode(byteOutputStream.toByteArray());
+			
+			byte[] base64EncodedByteArray = base64Encoder.encode(xmlBytes);
+			log.debug("XML deflated and base64 encoded {}", DatatypeConverter.printHexBinary(base64EncodedByteArray));
 			String base64EncodedMessage = new String(base64EncodedByteArray);
-
+			log.debug("XML deflated and base64 encoded {}", base64EncodedMessage);
 			String urlEncodedMessage = URLEncoder.encode(base64EncodedMessage, StandardCharsets.UTF_8.name());
 
 			request = urlEncodedMessage;
+
+			SecureRandom secRnd = new SecureRandom();
+			char[] VALID_CHARACTERS = "abcdefghijklmnopqrstuvwxyz".toCharArray();
+			char[] chars = new char[16];
+			for (int i = 0; i < chars.length; i++)
+				chars[i] = VALID_CHARACTERS[secRnd.nextInt(chars.length)];
+
+			model.addAttribute("samlrequest", urlEncodedMessage);
+			model.addAttribute("relaystate", new String(chars));
+
 			log.debug("REQUEST {}", urlEncodedMessage);
 		} catch (Exception e) {
 			log.error("ERROR {}", e.getMessage());
 		}
 		String redirectUrl = "https://192.168.122.99:9443/samlsso?SAMLRequest=";
 
-		return "redirect:" + redirectUrl + request;
+		model.addAttribute("url", "https://192.168.122.99:9443/samlsso");
+		// response.addHeader("Referer", "https://192.168.122.1:8443/");
+
+		return "form";
 	}
 
 	@RequestMapping(path = "/oauth2")

@@ -105,6 +105,7 @@ import org.opensaml.ws.soap.soap11.Body;
 import org.opensaml.ws.soap.soap11.Envelope;
 import org.opensaml.xml.Configuration;
 import org.opensaml.xml.ConfigurationException;
+import org.opensaml.xml.Namespace;
 import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.XMLObjectBuilderFactory;
 import org.opensaml.xml.encryption.EncryptionConstants;
@@ -481,6 +482,9 @@ public class SamlClient {
 			request.setDestination(forIdP);
 			request.setProtocolBinding("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST");
 
+			Namespace namespace = new Namespace("urn:oasis:names:tc:SAML:2.0:assertion", "saml2");
+			request.addNamespace(namespace);
+
 			Issuer issuer = (Issuer) Configuration.getBuilderFactory().getBuilder(Issuer.DEFAULT_ELEMENT_NAME)
 					.buildObject(Issuer.DEFAULT_ELEMENT_NAME);
 			issuer.setValue(fromSP);
@@ -490,26 +494,28 @@ public class SamlClient {
 			NameIDPolicy nameIDPolicy = (NameIDPolicy) Configuration.getBuilderFactory()
 					.getBuilder(NameIDPolicy.DEFAULT_ELEMENT_NAME).buildObject(NameIDPolicy.DEFAULT_ELEMENT_NAME);
 			nameIDPolicy.setAllowCreate(true);
-			nameIDPolicy.setFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:persistent");
-			nameIDPolicy.setSPNameQualifier("Issuer");
+			nameIDPolicy.setFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:transient");
+			// nameIDPolicy.setSPNameQualifier("Issuer");
 			request.setNameIDPolicy(nameIDPolicy);
 
-			RequestedAuthnContext authNContext = (RequestedAuthnContext) Configuration.getBuilderFactory()
-					.getBuilder(RequestedAuthnContext.DEFAULT_ELEMENT_NAME)
-					.buildObject(RequestedAuthnContext.DEFAULT_ELEMENT_NAME);
-
-			authNContext.setComparison(AuthnContextComparisonTypeEnumeration.EXACT);
-
-			AuthnContextClassRef authNContextClassRef = (AuthnContextClassRef) Configuration.getBuilderFactory()
-					.getBuilder(AuthnContextClassRef.DEFAULT_ELEMENT_NAME)
-					.buildObject(AuthnContextClassRef.DEFAULT_ELEMENT_NAME);
-
-			authNContextClassRef
-					.setAuthnContextClassRef("urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport");
-
-			authNContext.getAuthnContextClassRefs().add(authNContextClassRef);
-
-			request.setRequestedAuthnContext(authNContext);
+			// RequestedAuthnContext authNContext = (RequestedAuthnContext)
+			// Configuration.getBuilderFactory()
+			// .getBuilder(RequestedAuthnContext.DEFAULT_ELEMENT_NAME)
+			// .buildObject(RequestedAuthnContext.DEFAULT_ELEMENT_NAME);
+			//
+			// authNContext.setComparison(AuthnContextComparisonTypeEnumeration.EXACT);
+			//
+			// AuthnContextClassRef authNContextClassRef =
+			// (AuthnContextClassRef) Configuration.getBuilderFactory()
+			// .getBuilder(AuthnContextClassRef.DEFAULT_ELEMENT_NAME)
+			// .buildObject(AuthnContextClassRef.DEFAULT_ELEMENT_NAME);
+			//
+			// authNContextClassRef
+			// .setAuthnContextClassRef("urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport");
+			//
+			// authNContext.getAuthnContextClassRefs().add(authNContextClassRef);
+			//
+			// request.setRequestedAuthnContext(authNContext);
 
 			// Subject subject = (Subject)
 			// Configuration.getBuilderFactory().getBuilder(Subject.DEFAULT_ELEMENT_NAME)
