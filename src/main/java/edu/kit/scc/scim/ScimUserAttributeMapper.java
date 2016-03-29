@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 import com.nimbusds.oauth2.sdk.id.Subject;
 import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 
-import edu.kit.scc.dto.IndigoUser;
 import edu.kit.scc.scim.ScimUser.Address;
 import edu.kit.scc.scim.ScimUser.Email;
 import edu.kit.scc.scim.ScimUser.Meta;
@@ -36,80 +35,6 @@ import edu.kit.scc.scim.ScimUser.Photo;
 public class ScimUserAttributeMapper {
 
 	private static final Logger log = LoggerFactory.getLogger(ScimUserAttributeMapper.class);
-
-	public IndigoUser mapToIndigoUser(ScimUser scimUser) {
-		IndigoUser user = new IndigoUser();
-
-		user.setIndigoId(scimUser.getExternalId());
-		user.setUid(scimUser.getUserName());
-
-		Name name = scimUser.getName();
-		user.setCommonName(name.getGivenName());
-		user.setSurName(name.getFamilyName());
-
-		if (scimUser.getMeta() != null) {
-			if (scimUser.getMeta().get("homeDirectory") != null)
-				user.setHomeDirectory(scimUser.getMeta().get("homeDirectory"));
-			if (scimUser.getMeta().get("gecos") != null)
-				user.setGecos(scimUser.getMeta().get("gecos"));
-			if (scimUser.getMeta().get("loginShell") != null)
-				user.setLoginShell(scimUser.getMeta().get("loginShell"));
-			if (scimUser.getMeta().get("description") != null)
-				user.setDescription(scimUser.getMeta().get("description"));
-			if (scimUser.getMeta().get("gidNumber") != null) {
-				user.setGidNumber(Integer.valueOf(scimUser.getMeta().get("gidNumber")));
-			}
-			if (scimUser.getMeta().get("uidNumber") != null) {
-				user.setUidNumber(Integer.valueOf(scimUser.getMeta().get("uidNumber")));
-			}
-		}
-
-		if (scimUser.getPassword() != null)
-			user.setUserPassword(scimUser.getPassword().getBytes());
-
-		// verify required attributes
-		if (user.getUid() == null)
-			return null;
-		if (user.getIndigoId() == null)
-			return null;
-		if (user.getCommonName() == null)
-			return null;
-		if (user.getSurName() == null)
-			return null;
-
-		return user;
-	}
-
-	public ScimUser mapFromIndigoUser(IndigoUser user) {
-		ScimUser scimUser = new ScimUser();
-		scimUser.setSchemas(Arrays.asList(scimUser.USER_SCHEMA_2_0));
-
-		scimUser.setUserName(user.getUid());
-		scimUser.setExternalId(user.getIndigoId());
-		scimUser.setId(String.valueOf(user.getUidNumber()));
-
-		Name name = new Name();
-		name.setFamilyName(user.getSurName());
-		name.setGivenName(user.getCommonName());
-		scimUser.setName(name);
-
-		Meta meta = new Meta();
-		meta.put("homeDirectory", user.getHomeDirectory());
-		if (user.getGecos() != null)
-			meta.put("gecos", user.getGecos());
-		if (user.getLoginShell() != null)
-			meta.put("loginShell", user.getLoginShell());
-		if (user.getDescription() != null)
-			meta.put("description", user.getDescription());
-		meta.put("gidNumber", String.valueOf(user.getGidNumber()));
-		meta.put("uidNumber", String.valueOf(user.getUidNumber()));
-		scimUser.setMeta(meta);
-
-		if (user.getUserPassword() != null)
-			scimUser.setPassword(new String(user.getUserPassword()));
-
-		return scimUser;
-	}
 
 	@Deprecated
 	public ScimUser mapFromRegAppQuery(String query) {

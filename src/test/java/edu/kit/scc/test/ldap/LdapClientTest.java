@@ -8,7 +8,8 @@
  */
 package edu.kit.scc.test.ldap;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -22,7 +23,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import edu.kit.scc.Application;
 import edu.kit.scc.dto.PosixGroup;
-import edu.kit.scc.dto.IndigoUser;
+import edu.kit.scc.dto.PosixUser;
 import edu.kit.scc.ldap.LdapClient;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -50,13 +51,14 @@ public class LdapClientTest {
 		int uidNumber = 6001;
 		int gidNumber = 3333;
 
-		ldapClient.createIndigoUser(uid, cn, sn, uid, uidNumber, gidNumber, homeDirectory, description, null, null,
-				null);
+		// ldapClient.createIndigoUser(uid, cn, sn, uid, uidNumber, gidNumber,
+		// homeDirectory, description, null, null,
+		// null);
 	}
 
 	@Test
 	public void c_getLdapUserTest() {
-		IndigoUser user = ldapClient.getIndigoUser("newUser");
+		PosixUser user = ldapClient.getPosixUser("newUser");
 
 		assertNotNull(user);
 
@@ -73,8 +75,9 @@ public class LdapClientTest {
 		int uidNumber = 6001;
 		int gidNumber = 3333;
 
-		ldapClient.updateIndigoUser(uid, cn, sn, uid, uidNumber, gidNumber, homeDirectory, description, null, null,
-				null);
+		// ldapClient.updateIndigoUser(uid, cn, sn, uid, uidNumber, gidNumber,
+		// homeDirectory, description, null, null,
+		// null);
 	}
 
 	@Test
@@ -93,7 +96,7 @@ public class LdapClientTest {
 
 	@Test
 	public void g_deleteLdapUserTest() {
-		ldapClient.deleteIndigoUser("newUser");
+		ldapClient.deleteUser("newUser");
 	}
 
 	@Test
@@ -108,7 +111,7 @@ public class LdapClientTest {
 
 	@Test
 	public void getLdapUsersTest() {
-		ldapClient.getIndigoUsers();
+
 	}
 
 	@Test

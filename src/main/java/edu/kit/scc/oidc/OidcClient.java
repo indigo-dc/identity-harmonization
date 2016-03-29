@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
 import com.nimbusds.oauth2.sdk.AuthorizationCodeGrant;
@@ -78,6 +79,27 @@ public class OidcClient {
 
 	@Value("${oidc.userInfoEndpoint}")
 	private String oidcUserInfoEndpoint;
+
+	public UserInfo requestUserInfo(OIDCTokens tokens) {
+		UserInfo userInfo = null;
+
+		try {
+			JWT jwt = tokens.getIDToken();
+			JWTClaimsSet claimsSet = jwt.getJWTClaimsSet();
+
+			log.debug("Claims set {}", claimsSet.toJSONObject().toJSONString());
+			AccessToken accessToken = tokens.getAccessToken();
+			userInfo = requestUserInfo(accessToken.getValue(), claimsSet);
+
+		} catch (java.text.ParseException e) {
+			log.error(e.getMessage());
+		}
+
+		if (userInfo != null) {
+			log.debug("User info {}", userInfo.toJSONObject().toJSONString());
+		}
+		return userInfo;
+	}
 
 	/**
 	 * Gets all the user information from the OIDC HTTPS user endpoint.

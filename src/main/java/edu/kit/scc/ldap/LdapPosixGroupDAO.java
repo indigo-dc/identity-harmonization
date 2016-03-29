@@ -151,6 +151,22 @@ public class LdapPosixGroupDAO implements PosixGroupDAO {
 		}
 	}
 
+	public void removeMember(PosixGroup group, String memberUid) {
+		ModificationItem[] modificationItems = new ModificationItem[] {
+				new ModificationItem(DirContext.REMOVE_ATTRIBUTE, new BasicAttribute("memberUid", memberUid)) };
+		LdapName groupDN = LdapUtils.emptyLdapName();
+		try {
+			groupDN = new LdapName(groupBase);
+			groupDN.add("cn=" + group.getCommonName());
+			log.debug("Remove member {} from {}", memberUid, groupDN.toString());
+			ldapTemplate.modifyAttributes(groupDN, modificationItems);
+		} catch (AttributeInUseException e) {
+			log.error("ERROR {}", e.getMessage());
+		} catch (InvalidNameException e) {
+			log.error("ERROR {}", e.getMessage());
+		}
+	}
+
 	public List<PosixGroup> getUserGroups(String uid) {
 		AndFilter andFilter = new AndFilter();
 		andFilter.and(new EqualsFilter("objectclass", "posixGroup")).and(new EqualsFilter("memberUid", uid));

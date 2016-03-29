@@ -1,0 +1,70 @@
+[
+    {
+        "active": false,
+        "externalId": "2abf56d2-9bdc-8as1-a6c7-074c24769896",
+        "groups": [
+            {
+                "display": "ka_scc-misc-idm",
+                "value": "500079"
+            },
+            {
+                "display": "ka_kit-misc-staff-idm",
+                "value": "500080"
+            },
+            {
+                "display": "ka_scc-users-idm",
+                "value": "500097"
+            },
+            {
+                "display": "ka_scc",
+                "value": "500001"
+            },
+            {
+                "display": "ka_scc-misc-staff-idm",
+                "value": "500081"
+            }
+        ],
+        "meta": {
+            "cn": "peter@umbrellaid.org",
+            "gidNumber": "500084",
+            "homeDirectory": "/home/umbrella/umbrella_umbrella/umbrella_peter",
+            "uid": "umbrella_peter",
+            "uidNumber": "900015"
+        },
+        "name": {
+            "familyName": "Parker",
+            "formatted": "Peter Parker",
+            "givenName": "Peter"
+        },
+        "schemas": [
+            "urn:ietf:params:scim:schemas:core:2.0:User"
+        ],
+        "userName": "umbrella_peter"
+    },
+    {
+        "active": true,
+        "externalId": "2abf56d2-9bdc-47d2-a6c7-074c24717879",
+        "groups": [
+            {
+                "display": "umbrella_umbrella",
+                "value": "500084"
+            }
+        ],
+        "meta": {
+            "cn": "ym0762@partner.kit.edu",
+            "gidNumber": "500001",
+            "homeDirectory": "/home/ka/ka_scc/ka_ym0762",
+            "uid": "ka_ym0762",
+            "uidNumber": "900010"
+        },
+        "name": {
+            "familyName": "N\u00fchm",
+            "formatted": "Arno N\u00fchm",
+            "givenName": "Arno"
+        },
+        "schemas": [
+            "urn:ietf:params:scim:schemas:core:2.0:User"
+        ],
+        "userName": "ka_ym0762"
+    }
+]

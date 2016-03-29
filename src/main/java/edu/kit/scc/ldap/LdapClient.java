@@ -23,7 +23,6 @@ import org.springframework.stereotype.Component;
 
 import edu.kit.scc.dto.PosixGroup;
 import edu.kit.scc.dto.PosixUser;
-import edu.kit.scc.dto.IndigoUser;
 
 /**
  * LDAP client implementation.
@@ -70,18 +69,10 @@ public class LdapClient {
 	}
 
 	@Bean
-	LdapIndigoUserDAO ldapIndigoUser(LdapTemplate ldapTemplate) {
-		LdapIndigoUserDAO ldapUserDAO = new LdapIndigoUserDAO();
-		ldapUserDAO.setLdapTemplate(ldapTemplate);
-		ldapUserDAO.setUserBase(userBase);
-		return ldapUserDAO;
-	}
-
-	@Bean
 	LdapPosixUserDAO ldapPosixUser(LdapTemplate ldapTemplate) {
 		LdapPosixUserDAO ldapUserDAO = new LdapPosixUserDAO();
 		ldapUserDAO.setLdapTemplate(ldapTemplate);
-		ldapUserDAO.setUserBase("");
+		ldapUserDAO.setUserBase(userBase);
 		return ldapUserDAO;
 	}
 
@@ -94,24 +85,21 @@ public class LdapClient {
 	}
 
 	@Autowired
-	private LdapIndigoUserDAO ldapIndigoUser;
-
-	@Autowired
 	private LdapPosixUserDAO ldapPosixUser;
 
 	@Autowired
 	private LdapPosixGroupDAO ldapPosixGroup;
 
 	/**
-	 * Gets the INDIGO user specified from the LDAP server.
+	 * Gets the POSIX user specified from the LDAP server.
 	 * 
 	 * @param uid
 	 *            the user's uid
-	 * @return a {@link IndigoUser} with the LDAP user information
+	 * @return a {@link PosixUser} with the LDAP user information
 	 */
-	public IndigoUser getIndigoUser(String uid) {
-		List<IndigoUser> userList = ldapIndigoUser.getUserDetails(uid);
-		IndigoUser user = null;
+	public PosixUser getPosixUser(String uid) {
+		List<PosixUser> userList = ldapPosixUser.getUserDetails(uid);
+		PosixUser user = null;
 
 		if (userList != null && !userList.isEmpty()) {
 			user = userList.get(0);
@@ -161,19 +149,6 @@ public class LdapClient {
 	}
 
 	/**
-	 * Gets all INDIGO users from the LDAP server.
-	 * 
-	 * @return a {@link List<IndigoUser>} with the LDAP user information
-	 */
-	public List<IndigoUser> getIndigoUsers() {
-		List<IndigoUser> userList = ldapIndigoUser.getAllUsers();
-		for (int i = 0; i < userList.size(); i++)
-			log.debug("User {}", ((IndigoUser) userList.get(i)).toString());
-
-		return userList;
-	}
-
-	/**
 	 * Gets all POSIX users from the LDAP server.
 	 * 
 	 * @return a {@link List<PosixUser>} with the LDAP user information
@@ -215,94 +190,10 @@ public class LdapClient {
 		return groupList;
 	}
 
-	/**
-	 * Creates a new LDAP INDIGO user.
-	 * 
-	 * @param uid
-	 *            the user's uid
-	 * @param cn
-	 *            the user's common name
-	 * @param sn
-	 *            the user's sure name
-	 * @param uidNumber
-	 *            the user's uid number
-	 * @param gidNumber
-	 *            the user's gid number
-	 * @param homeDirectory
-	 *            the user's home directory
-	 * @param description
-	 *            the user's description
-	 * @param gecos
-	 *            the user's general comprehensive operating system information
-	 * @param loginShell
-	 *            the user's login shell
-	 * @param userPassword
-	 *            the user's password
-	 * @return the created {@link IndigoUser}
-	 */
-	public IndigoUser createIndigoUser(String uid, String cn, String sn, String indigoId, int uidNumber, int gidNumber,
-			String homeDirectory, String description, String gecos, String loginShell, String userPassword) {
-		IndigoUser user = new IndigoUser();
-		user.setCommonName(cn);
-		user.setDescription(description);
-		user.setSurName(sn);
-		user.setUid(uid);
-		user.setGecos(gecos);
-		user.setIndigoId(indigoId);
-		user.setGidNumber(gidNumber);
-		user.setUidNumber(uidNumber);
-		user.setHomeDirectory(homeDirectory);
-		user.setLoginShell(loginShell);
-		if (userPassword != null)
-			user.setUserPassword(userPassword.getBytes());
-		ldapIndigoUser.insertUser(user);
+	public PosixUser updatePosixUser(PosixUser posixUser) {
+		ldapPosixUser.updateUser(posixUser);
 
-		return getIndigoUser(uid);
-	}
-
-	/**
-	 * Updates a specific LDAP INDIGO user.
-	 * 
-	 * @param uid
-	 *            the user's uid
-	 * @param cn
-	 *            the user's common name
-	 * @param sn
-	 *            the user's sure name
-	 * @param uidNumber
-	 *            the user's uid number
-	 * @param gidNumber
-	 *            the user's gid number
-	 * @param homeDirectory
-	 *            the user's home directory
-	 * @param description
-	 *            the user's description
-	 * @param gecos
-	 *            the user's general comprehensive operating system information
-	 * @param loginShell
-	 *            the user's login shell
-	 * @param userPassword
-	 *            the user's password
-	 * @return the updated {@link IndigoUser}
-	 */
-	public IndigoUser updateIndigoUser(String uid, String cn, String sn, String indigoId, int uidNumber, int gidNumber,
-			String homeDirectory, String description, String gecos, String loginShell, String userPassword) {
-		IndigoUser user = new IndigoUser();
-		user.setCommonName(cn);
-		user.setDescription(description);
-		user.setSurName(sn);
-		user.setUid(uid);
-		user.setGecos(gecos);
-		user.setIndigoId(indigoId);
-		user.setGidNumber(gidNumber);
-		user.setUidNumber(uidNumber);
-		user.setHomeDirectory(homeDirectory);
-		user.setLoginShell(loginShell);
-		if (userPassword != null)
-			user.setUserPassword(userPassword.getBytes());
-		ldapIndigoUser.updateUser(user);
-
-		return getIndigoUser(uid);
+		return getPosixUser(posixUser.getUid());
 	}
 
 	/**
@@ -312,21 +203,9 @@ public class LdapClient {
 	 *            the user's uid
 	 */
 	public void deleteUser(String uid) {
-		IndigoUser user = new IndigoUser();
+		PosixUser user = new PosixUser();
 		user.setUid(uid);
 		ldapPosixUser.deleteUser(user);
-	}
-
-	/**
-	 * Deletes a specific INDIGO LDAP user.
-	 * 
-	 * @param uid
-	 *            the user's uid
-	 */
-	public void deleteIndigoUser(String uid) {
-		IndigoUser user = new IndigoUser();
-		user.setUid(uid);
-		ldapIndigoUser.deleteUser(user);
 	}
 
 	/**
@@ -404,6 +283,20 @@ public class LdapClient {
 		PosixGroup group = new PosixGroup();
 		group.setCommonName(cn);
 		ldapPosixGroup.addMember(group, memberUid);
+	}
+
+	/**
+	 * Removes a specific LDAP user from a specific group.
+	 * 
+	 * @param cn
+	 *            the group's common name
+	 * @param memberUid
+	 *            the user's uid
+	 */
+	public void removeGroupMember(String cn, String memberUid) {
+		PosixGroup group = new PosixGroup();
+		group.setCommonName(cn);
+		ldapPosixGroup.removeMember(group, memberUid);
 	}
 
 	/**

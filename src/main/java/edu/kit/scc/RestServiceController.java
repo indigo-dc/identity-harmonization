@@ -8,6 +8,8 @@
  */
 package edu.kit.scc;
 
+import java.util.List;
+
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.FormParam;
 
@@ -31,7 +33,6 @@ import edu.kit.scc.http.HttpResponse;
 import edu.kit.scc.oidc.OidcClient;
 import edu.kit.scc.regapp.RegAppClient;
 import edu.kit.scc.scim.ScimListResponse;
-import edu.kit.scc.scim.ScimService;
 import edu.kit.scc.scim.ScimUser;
 
 @RestController
@@ -55,8 +56,35 @@ public class RestServiceController {
 	@Autowired
 	private IdentityHarmonizer identityHarmonizer;
 
-	@Autowired
-	private ScimService scimService;
+	@RequestMapping(path = "/link", method = RequestMethod.POST)
+	public List<ScimUser> linkUsers(@RequestHeader("Authorization") String basicAuthorization,
+			@RequestBody List<ScimUser> scimUsers, HttpServletResponse response) {
+
+		verifyAuthorization(basicAuthorization);
+
+		log.debug("Request body {}", scimUsers);
+
+		List<ScimUser> modifiedUsers = identityHarmonizer.harmonizeIdentities(scimUsers);
+		if (!modifiedUsers.isEmpty())
+			return modifiedUsers;
+
+		throw new ConflictException();
+	}
+
+	@RequestMapping(path = "/unlink", method = RequestMethod.POST)
+	public List<ScimUser> unlinkUsers(@RequestHeader("Authorization") String basicAuthorization,
+			@RequestBody List<ScimUser> scimUsers, HttpServletResponse response) {
+
+		verifyAuthorization(basicAuthorization);
+
+		log.debug("Request body {}", scimUsers);
+
+		List<ScimUser> modifiedUsers = identityHarmonizer.unlinkUsers(scimUsers);
+		if (!modifiedUsers.isEmpty())
+			return modifiedUsers;
+
+		throw new ConflictException();
+	}
 
 	@RequestMapping(path = "/scim/Users", method = RequestMethod.POST, produces = "application/scim+json")
 	@ResponseStatus(value = HttpStatus.CREATED)
@@ -67,7 +95,7 @@ public class RestServiceController {
 
 		log.debug("Request body {}", scimUser);
 
-		ScimUser createdScimUser = scimService.createLdapIndigoUser(scimUser);
+		ScimUser createdScimUser = scimUser; // scimService.createLdapIndigoUser(scimUser);
 
 		if (createdScimUser != null) {
 			response.addHeader("Location", "");
@@ -99,7 +127,9 @@ public class RestServiceController {
 
 		if (regAppSuccess) {
 			regAppQuery = regAppClient.attributeQuery(regId);
-			return identityHarmonizer.harmonizeIdentities(username, regAppQuery);
+			log.debug("{}", regAppQuery);
+			// return identityHarmonizer.harmonizeIdentities(username,
+			// regAppQuery);
 		}
 
 		// OIDC
@@ -110,11 +140,11 @@ public class RestServiceController {
 		if (tokens != null) {
 			oidcSuccess = true;
 			log.debug("OIDC authentication {}", oidcSuccess);
-			return identityHarmonizer.harmonizeIdentities(username, tokens);
+			// return identityHarmonizer.harmonizeIdentities(username, tokens);
 		}
 		log.debug("OIDC authentication {}", oidcSuccess);
 
-		// if nothing succeeded, fail ... gracefully
+		// if nothing succeeded, fail
 		throw new UnauthorizedException();
 	}
 

@@ -8,26 +8,20 @@
  */
 package edu.kit.scc;
 
-import java.text.ParseException;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.nimbusds.jwt.JWT;
-import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.oauth2.sdk.token.AccessToken;
-import com.nimbusds.openid.connect.sdk.claims.UserInfo;
-import com.nimbusds.openid.connect.sdk.token.OIDCTokens;
-
-import edu.kit.scc.http.HttpResponse;
-import edu.kit.scc.oidc.OidcClient;
-import edu.kit.scc.scim.ScimClient;
-import edu.kit.scc.scim.ScimListResponse;
+import edu.kit.scc.dto.PosixGroup;
+import edu.kit.scc.dto.PosixUser;
+import edu.kit.scc.ldap.LdapClient;
+import edu.kit.scc.scim.ScimGroup;
 import edu.kit.scc.scim.ScimUser;
-import edu.kit.scc.scim.ScimUserAttributeMapper;
+import edu.kit.scc.scim.ScimUser.Meta;
 
 @Component
 public class IdentityHarmonizer {
@@ -35,82 +29,141 @@ public class IdentityHarmonizer {
 	private static final Logger log = LoggerFactory.getLogger(IdentityHarmonizer.class);
 
 	@Autowired
-	private ScimClient scimClient;
+	private LdapClient ldapClient;
 
-	@Autowired
-	private OidcClient oidcClient;
+	public List<ScimUser> harmonizeIdentities(List<ScimUser> scimUsers) {
+		ArrayList<ScimUser> linkedUsers = new ArrayList<>();
+		ScimUser primaryUser = null;
 
-	public ScimListResponse harmonizeIdentities(String username, OIDCTokens tokens) {
-		int identityCount = 0;
-
-		ScimUser scimUser = scimClient.getScimUser(username);
-		if (scimUser != null)
-			identityCount++;
-
-		ScimUser scimUserFromJWT = null;
-		ScimUserAttributeMapper mapper = new ScimUserAttributeMapper();
-
-		// OIDC
-		log.debug("Try to get OIDC user information");
-		UserInfo userInfo = null;
-		if (tokens != null) {
-			try {
-				JWT jwt = tokens.getIDToken();
-				JWTClaimsSet claimsSet = jwt.getJWTClaimsSet();
-
-				log.debug("Claims set {}", claimsSet.toJSONObject().toJSONString());
-				AccessToken accessToken = tokens.getAccessToken();
-				userInfo = oidcClient.requestUserInfo(accessToken.getValue(), claimsSet);
-			} catch (ParseException e) {
-				log.error(e.getMessage());
+		for (ScimUser user : scimUsers) {
+			if (user.isActive()) {
+				primaryUser = user;
+				break;
 			}
 		}
 
-		if (userInfo != null) {
-			log.debug("User info {}", userInfo.toJSONObject().toJSONString());
-			scimUserFromJWT = mapper.mapFromUserInfo(userInfo);
-			if (scimUserFromJWT != null)
-				identityCount++;
+		if (scimUsers.remove(primaryUser)) {
+			PosixUser primaryPosixUser = ldapClient.getPosixUser(primaryUser.getUserName());
+			log.debug("Primary user {}", primaryPosixUser.toString());
+
+			Meta metaData = new Meta();
+			metaData.put("homeDirectory", primaryPosixUser.getHomeDirectory());
+			metaData.put("cn", primaryPosixUser.getCommonName());
+			metaData.put("gidNumber", String.valueOf(primaryPosixUser.getGidNumber()));
+			metaData.put("uid", primaryPosixUser.getUid());
+			metaData.put("uidNumber", String.valueOf(primaryPosixUser.getUidNumber()));
+
+			primaryUser.setMeta(metaData);
+
+			List<PosixGroup> primaryGroups = ldapClient.getUserGroups(primaryUser.getUserName());
+			log.debug("Primary groups {}", primaryGroups.toString());
+
+			primaryUser.setGroups(new ArrayList<>());
+
+			for (ScimUser secondaryUser : scimUsers) {
+				PosixUser secondaryPosixUser = ldapClient.getPosixUser(secondaryUser.getUserName());
+				log.debug("Secondary user {}", secondaryUser.toString());
+
+				metaData = new Meta();
+				metaData.put("homeDirectory", secondaryPosixUser.getHomeDirectory());
+				metaData.put("cn", secondaryPosixUser.getCommonName());
+				metaData.put("gidNumber", String.valueOf(secondaryPosixUser.getGidNumber()));
+				metaData.put("uid", secondaryPosixUser.getUid());
+				metaData.put("uidNumber", String.valueOf(secondaryPosixUser.getUidNumber()));
+
+				secondaryUser.setMeta(metaData);
+
+				List<PosixGroup> secondaryGroups = ldapClient.getUserGroups(secondaryUser.getUserName());
+				log.debug("Secondary groups {}", secondaryGroups.toString());
+
+				secondaryUser.setGroups(new ArrayList<>());
+
+				for (PosixGroup group : primaryGroups) {
+					List<String> members = group.getMemberUids();
+					log.debug("Group {} members {}", group.getCommonName(), members);
+					if (!members.contains(secondaryUser.getUserName())) {
+						ldapClient.addGroupMember(group.getCommonName(), secondaryUser.getUserName());
+
+						ScimGroup scimGroup = new ScimGroup();
+						scimGroup.setDisplay(group.getCommonName());
+						scimGroup.setValue(String.valueOf(group.getGidNumber()));
+						secondaryUser.getGroups().add(scimGroup);
+
+						log.debug("Adding user {} to group {}", secondaryUser.getUserName(), group.getCommonName());
+					}
+				}
+
+				for (PosixGroup group : secondaryGroups) {
+					List<String> members = group.getMemberUids();
+					log.debug("Group members {}", members);
+					if (!members.contains(primaryUser.getUserName())) {
+						ldapClient.addGroupMember(group.getCommonName(), primaryUser.getUserName());
+
+						ScimGroup scimGroup = new ScimGroup();
+						scimGroup.setDisplay(group.getCommonName());
+						scimGroup.setValue(String.valueOf(group.getGidNumber()));
+						primaryUser.getGroups().add(scimGroup);
+
+						log.debug("Adding user {} to group {}", primaryUser.getUserName(), group.getCommonName());
+					}
+				}
+
+				linkedUsers.add(secondaryUser);
+
+				secondaryPosixUser.setUidNumber(primaryPosixUser.getUidNumber());
+				secondaryPosixUser.setHomeDirectory(primaryPosixUser.getHomeDirectory());
+				ldapClient.updatePosixUser(secondaryPosixUser);
+
+				log.debug("Modified LDAP user {}", secondaryUser.toString());
+
+			}
+
+			linkedUsers.add(primaryUser);
+
 		}
-
-		ScimListResponse scimListResponse = new ScimListResponse();
-		scimListResponse
-				.setSchemas(Arrays.asList(scimListResponse.LIST_RESPONSE_SCHEMA, new ScimUser().USER_SCHEMA_2_0));
-		scimListResponse.setResources(Arrays.asList(scimUser, scimUserFromJWT));
-		scimListResponse.setTotalResults(identityCount);
-
-		log.debug("SCIM query response {}", scimListResponse.toString());
-
-		return scimListResponse;
+		return linkedUsers;
 	}
 
-	// Example Reg-App HttpResponse
-	// {"eppn":"ym0762@partner.kit.edu","last_update":"2016-02-02
-	// 11:47:49.489","email":"ym0762@partner.kit.edu"}
-	public ScimListResponse harmonizeIdentities(String username, HttpResponse regAppQuery) {
-		int identityCount = 0;
-		ScimUser scimUser = scimClient.getScimUser(username);
-		if (scimUser != null)
-			identityCount++;
+	public List<ScimUser> unlinkUsers(List<ScimUser> scimUsers) {
+		ArrayList<ScimUser> unlinkedUsers = new ArrayList<>();
 
-		ScimUser scimUserFromQuery = null;
-		ScimUserAttributeMapper mapper = new ScimUserAttributeMapper();
+		for (ScimUser user : scimUsers) {
+			PosixUser posixUser = ldapClient.getPosixUser(user.getUserName());
+			log.debug("Posix user {}", posixUser.toString());
 
-		if (regAppQuery != null) {
-			log.debug("Reg-app query response {}", regAppQuery.toString());
-			scimUserFromQuery = mapper.mapFromRegAppQuery(regAppQuery.getResponseString());
-			if (scimUserFromQuery != null)
-				identityCount++;
+			for (ScimGroup group : user.getGroups()) {
+				ldapClient.removeGroupMember(group.getDisplay(), user.getUserName());
+				log.debug("Remove user {} from group {}", user.getUserName(), group.getDisplay());
+			}
+
+			if (!user.isActive() && user.getMeta() != null) {
+				posixUser.setHomeDirectory(user.getMeta().get("homeDirectory"));
+				posixUser.setUidNumber(Integer.valueOf(user.getMeta().get("uidNumber")));
+
+				ldapClient.updatePosixUser(posixUser);
+
+				log.debug("Modified LDAP user {}", posixUser.toString());
+			}
+
+			posixUser = ldapClient.getPosixUser(user.getUserName());
+			Meta metaData = new Meta();
+			metaData.put("homeDirectory", posixUser.getHomeDirectory());
+			metaData.put("cn", posixUser.getCommonName());
+			metaData.put("gidNumber", String.valueOf(posixUser.getGidNumber()));
+			metaData.put("uid", posixUser.getUid());
+			metaData.put("uidNumber", String.valueOf(posixUser.getUidNumber()));
+
+			user.setGroups(new ArrayList<>());
+			List<PosixGroup> posixGroups = ldapClient.getUserGroups(user.getUserName());
+			for (PosixGroup group : posixGroups) {
+				ScimGroup scimGroup = new ScimGroup();
+				scimGroup.setDisplay(group.getCommonName());
+				scimGroup.setValue(String.valueOf(group.getGidNumber()));
+				user.getGroups().add(scimGroup);
+			}
+			user.setActive(true);
+			unlinkedUsers.add(user);
 		}
-
-		ScimListResponse scimListResponse = new ScimListResponse();
-		scimListResponse.setSchemas(Arrays.asList(scimListResponse.LIST_RESPONSE_SCHEMA, scimUser.USER_SCHEMA_2_0));
-		scimListResponse.setResources(Arrays.asList(scimUser, scimUserFromQuery));
-		scimListResponse.setTotalResults(identityCount);
-
-		log.debug("SCIM query response {}", scimListResponse.toString());
-
-		return scimListResponse;
-
+		return unlinkedUsers;
 	}
 }

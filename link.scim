@@ -1,0 +1,23 @@
+[{
+  "schemas":["urn:ietf:params:scim:schemas:core:2.0:User"],
+  "userName":"ka_ym0762",
+  "externalId":"2abf56d2-9bdc-47d2-a6c7-074c24717879",
+  "active":true,
+  "name":{
+    "formatted":"Arno Nühm",
+    "familyName":"Nühm",
+    "givenName":"Arno"
+  }
+},
+{
+  "schemas":["urn:ietf:params:scim:schemas:core:2.0:User"],
+  "userName":"umbrella_peter",
+  "externalId":"2abf56d2-9bdc-8as1-a6c7-074c24769896",
+  "active":false,
+  "name":{
+    "formatted":"Peter Parker",
+    "familyName":"Parker",
+    "givenName":"Peter"
+  }
+}
+]
