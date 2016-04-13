@@ -1,11 +1,12 @@
-/*   Copyright 2016 Karlsruhe Institute of Technology (KIT)
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
+/*
+ * Copyright 2016 Karlsruhe Institute of Technology (KIT)
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
  */
+
 package edu.kit.scc.test.ldap;
 
 import static org.junit.Assert.assertNotNull;
@@ -31,98 +32,99 @@ import edu.kit.scc.ldap.LdapClient;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LdapClientTest {
 
-	private static final Logger log = LoggerFactory.getLogger(LdapClientTest.class);
+  private static final Logger log = LoggerFactory.getLogger(LdapClientTest.class);
 
-	@Autowired
-	private LdapClient ldapClient;
+  @Autowired
+  private LdapClient ldapClient;
 
-	@Test
-	public void a_createLdapGroupTest() {
-		ldapClient.createPosixGroup("newGroup", 3333, null, null);
-	}
+  @Test
+  public void a_createLdapGroupTest() {
+    ldapClient.createPosixGroup("newGroup", 3333, null, null);
+  }
 
-	@Test
-	public void b_createLdapUserTest() {
-		String cn = "newUser";
-		String sn = "newUser";
-		String description = "new posix user";
-		String homeDirectory = "/home/newUser";
-		String uid = "newUser";
-		int uidNumber = 6001;
-		int gidNumber = 3333;
+  @Test
+  public void b_createLdapUserTest() {
+    String cn = "newUser";
+    String sn = "newUser";
+    String description = "new posix user";
+    String homeDirectory = "/home/newUser";
+    String uid = "newUser";
+    int uidNumber = 6001;
+    int gidNumber = 3333;
 
-		// ldapClient.createIndigoUser(uid, cn, sn, uid, uidNumber, gidNumber,
-		// homeDirectory, description, null, null,
-		// null);
-	}
+    // ldapClient.createIndigoUser(uid, cn, sn, uid, uidNumber, gidNumber,
+    // homeDirectory, description, null, null,
+    // null);
+  }
 
-	@Test
-	public void c_getLdapUserTest() {
-		PosixUser user = ldapClient.getPosixUser("newUser");
+  @Test
+  public void c_getLdapUserTest() {
+    PosixUser user = ldapClient.getPosixUser("newUser");
 
-		assertNotNull(user);
+    assertNotNull(user);
 
-		log.debug(user.toString());
-	}
+    log.debug(user.toString());
+  }
 
-	@Test
-	public void d_updateUserTest() {
-		String cn = "newUser";
-		String sn = "newUser";
-		String description = "new posix user (update)";
-		String homeDirectory = "/home/newUser";
-		String uid = "newUser";
-		int uidNumber = 6001;
-		int gidNumber = 3333;
+  @Test
+  public void d_updateUserTest() {
+    String cn = "newUser";
+    String sn = "newUser";
+    String description = "new posix user (update)";
+    String homeDirectory = "/home/newUser";
+    String uid = "newUser";
+    int uidNumber = 6001;
+    int gidNumber = 3333;
 
-		// ldapClient.updateIndigoUser(uid, cn, sn, uid, uidNumber, gidNumber,
-		// homeDirectory, description, null, null,
-		// null);
-	}
+    // ldapClient.updateIndigoUser(uid, cn, sn, uid, uidNumber, gidNumber,
+    // homeDirectory, description, null, null,
+    // null);
+  }
 
-	@Test
-	public void e_addUserToGroupTest() {
-		ldapClient.addGroupMember("newGroup", "newUser");
-	}
+  @Test
+  public void e_addUserToGroupTest() {
+    ldapClient.addGroupMember("newGroup", "newUser");
+  }
 
-	@Test
-	public void f_getLdapGroupTest() {
-		PosixGroup group = ldapClient.getPosixGroup("newGroup");
+  @Test
+  public void f_getLdapGroupTest() {
+    PosixGroup group = ldapClient.getPosixGroup("newGroup");
 
-		assertNotNull(group);
+    assertNotNull(group);
 
-		log.debug(group.toString());
-	}
+    log.debug(group.toString());
+  }
 
-	@Test
-	public void g_deleteLdapUserTest() {
-		ldapClient.deleteUser("newUser");
-	}
+  @Test
+  public void g_deleteLdapUserTest() {
+    ldapClient.deleteUser("newUser");
+  }
 
-	@Test
-	public void h_deleteLdapGroupTest() {
-		ldapClient.deleteGroup("newGroup");
-	}
+  @Test
+  public void h_deleteLdapGroupTest() {
+    ldapClient.deleteGroup("newGroup");
+  }
 
-	@Test
-	public void getLdapGroupsTest() {
-		ldapClient.getPosixGroups();
-	}
+  @Test
+  public void getLdapGroupsTest() {
+    ldapClient.getPosixGroups();
+  }
 
-	@Test
-	public void getLdapUsersTest() {
+  @Test
+  public void getLdapUsersTest() {
 
-	}
+  }
 
-	@Test
-	public void getNewGidNumber() {
-		log.debug("{}", ldapClient.generateGroupIdNumber());
-	}
+  @Test
+  public void getNewGidNumber() {
+    log.debug("{}", ldapClient.generateGroupIdNumber());
+  }
 
-	@Test
-	public void groupEqualityTest() {
+  @Test
+  public void groupEqualityTest() {
 
-		assertTrue(ldapClient.equalGroups(ldapClient.getPosixGroup(2001), ldapClient.getPosixGroup("user")));
+    assertTrue(
+        ldapClient.equalGroups(ldapClient.getPosixGroup(2001), ldapClient.getPosixGroup("user")));
 
-	}
+  }
 }
