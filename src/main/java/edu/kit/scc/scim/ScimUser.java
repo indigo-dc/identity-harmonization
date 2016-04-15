@@ -295,7 +295,7 @@ public class ScimUser {
   }
 
   @JsonInclude(JsonInclude.Include.NON_NULL)
-  public static class x509Certificate {
+  public static class X509Certificate {
     private String value;
 
     public String getValue() {

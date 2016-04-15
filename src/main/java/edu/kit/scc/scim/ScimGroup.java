@@ -10,11 +10,13 @@
 package edu.kit.scc.scim;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ScimGroup {
+  @JsonProperty(value = "$ref")
+  private String ref;
   private String value;
-  private String $ref;
   private String display;
 
   public String getValue() {
@@ -25,12 +27,12 @@ public class ScimGroup {
     this.value = value;
   }
 
-  public String get$ref() {
-    return $ref;
+  public String getRef() {
+    return ref;
   }
 
-  public void set$ref(String $ref) {
-    this.$ref = $ref;
+  public void setRef(String ref) {
+    this.ref = ref;
   }
 
   public String getDisplay() {
@@ -44,7 +46,7 @@ public class ScimGroup {
   @Override
   public String toString() {
     return "ScimGroup [" + (value != null ? "value=" + value + ", " : "")
-        + ($ref != null ? "$ref=" + $ref + ", " : "")
-        + (display != null ? "display=" + display : "") + "]";
+        + (ref != null ? "$ref=" + ref + ", " : "") + (display != null ? "display=" + display : "")
+        + "]";
   }
 }
