@@ -47,6 +47,7 @@
         "groups": [
             {
                 "display": "umbrella_umbrella",
+                "$ref": "https://example.com/v2/Groups/e9e30dba-f08f-4109-8486-d5c6a331660",
                 "value": "500084"
             }
         ],

@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ScimUser1_0 {
+public class ScimUser10 {
 
   @JsonInclude(JsonInclude.Include.NON_NULL)
   public static class Name {
