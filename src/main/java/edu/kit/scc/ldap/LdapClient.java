@@ -212,25 +212,25 @@ public class LdapClient {
   /**
    * Creates a new LDAP POSIX group.
    * 
-   * @param cn the group's common name
-   * @param gidNumber the group's gid number
-   * @param description the group's description
-   * @param userPassword the group's user password
+   * @param group the {@link PosixGroup} to create
    * @return the created {@link PosixGroup}
    * 
    */
-  public PosixGroup createPosixGroup(String cn, int gidNumber, String description,
-      String userPassword) {
-    PosixGroup group = new PosixGroup();
-    group.setCommonName(cn);
-    group.setGidNumber(gidNumber);
-    group.setDescription(description);
-    if (userPassword != null) {
-      group.setUserPassword(userPassword.getBytes());
-    }
+  public PosixGroup createPosixGroup(PosixGroup group) {
     ldapPosixGroup.insertGroup(group);
+    return getPosixGroup(group.getCommonName());
+  }
 
-    return getPosixGroup(cn);
+  /**
+   * Creates a new LDAP POSIX user.
+   * 
+   * @param user the {@link PosixUser} to create
+   * @return the created {@link PosixUser}
+   */
+  public PosixUser createPosixUser(PosixUser user) {
+    ldapPosixUser.insertUser(user);
+
+    return getPosixUser(user.getUid());
   }
 
   /**

@@ -12,6 +12,12 @@ package edu.kit.scc.test.ldap;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import edu.kit.scc.Application;
+import edu.kit.scc.dto.PosixGroup;
+import edu.kit.scc.dto.PosixUser;
+import edu.kit.scc.ldap.LdapClient;
+
+import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,10 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import edu.kit.scc.Application;
-import edu.kit.scc.dto.PosixGroup;
-import edu.kit.scc.dto.PosixUser;
-import edu.kit.scc.ldap.LdapClient;
+import java.util.List;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = Application.class)
@@ -37,30 +40,56 @@ public class LdapClientTest {
   @Autowired
   private LdapClient ldapClient;
 
-  @Test
-  public void a_createLdapGroupTest() {
-    ldapClient.createPosixGroup("newGroup", 3333, null, null);
-  }
+  protected static PosixGroup posixGroup;
+  protected static PosixUser posixUser;
 
-  @Test
-  public void b_createLdapUserTest() {
-    String cn = "newUser";
-    String sn = "newUser";
+  @BeforeClass
+  public static void setUpBeforeClass() {
+    String userCn = "newUser";
+    String userSn = "newUser";
     String description = "new posix user";
     String homeDirectory = "/home/newUser";
     String uid = "newUser";
     int uidNumber = 6001;
+    int userGidNumber = 3333;
+
+    posixUser = new PosixUser();
+    posixUser.setCommonName(userCn);
+    posixUser.setSurName(userSn);
+    posixUser.setHomeDirectory(homeDirectory);
+    posixUser.setDescription(description);
+    posixUser.setUid(uid);
+    posixUser.setUidNumber(uidNumber);
+    posixUser.setGidNumber(userGidNumber);
+
+    String groupCn = "newGroup";
     int gidNumber = 3333;
 
-    // ldapClient.createIndigoUser(uid, cn, sn, uid, uidNumber, gidNumber,
-    // homeDirectory, description, null, null,
-    // null);
+    posixGroup = new PosixGroup();
+    posixGroup.setCommonName(groupCn);
+    posixGroup.setGidNumber(gidNumber);
+
+  }
+
+  @Test
+  public void a_createLdapGroupTest() {
+    PosixGroup group = ldapClient.createPosixGroup(posixGroup);
+    assertNotNull(group);
+
+    log.debug(group.toString());
+  }
+
+  @Test
+  public void b_createLdapUserTest() {
+    PosixUser user = ldapClient.createPosixUser(posixUser);
+    assertNotNull(user);
+
+    log.debug(user.toString());
   }
 
   @Test
   public void c_getLdapUserTest() {
-    PosixUser user = ldapClient.getPosixUser("newUser");
-
+    PosixUser user = ldapClient.getPosixUser(posixUser.getUid());
     assertNotNull(user);
 
     log.debug(user.toString());
@@ -68,27 +97,26 @@ public class LdapClientTest {
 
   @Test
   public void d_updateUserTest() {
-    String cn = "newUser";
-    String sn = "newUser";
-    String description = "new posix user (update)";
-    String homeDirectory = "/home/newUser";
-    String uid = "newUser";
-    int uidNumber = 6001;
-    int gidNumber = 3333;
+    posixUser.setDescription("new posix user (update)");
+    PosixUser user = ldapClient.updatePosixUser(posixUser);
+    assertNotNull(user);
 
-    // ldapClient.updateIndigoUser(uid, cn, sn, uid, uidNumber, gidNumber,
-    // homeDirectory, description, null, null,
-    // null);
+    log.debug(user.toString());
   }
 
   @Test
   public void e_addUserToGroupTest() {
-    ldapClient.addGroupMember("newGroup", "newUser");
+    ldapClient.addGroupMember(posixGroup.getCommonName(), posixUser.getUid());
+  }
+
+  @Test
+  public void f_removeUserFromGroupTest() {
+    ldapClient.removeGroupMember(posixGroup.getCommonName(), posixUser.getUid());
   }
 
   @Test
   public void f_getLdapGroupTest() {
-    PosixGroup group = ldapClient.getPosixGroup("newGroup");
+    PosixGroup group = ldapClient.getPosixGroup(posixGroup.getCommonName());
 
     assertNotNull(group);
 
@@ -96,35 +124,37 @@ public class LdapClientTest {
   }
 
   @Test
-  public void g_deleteLdapUserTest() {
-    ldapClient.deleteUser("newUser");
+  public void g_groupEqualityTest() {
+
+    assertTrue(ldapClient.equalGroups(ldapClient.getPosixGroup(posixGroup.getGidNumber()),
+        ldapClient.getPosixGroup(posixGroup.getCommonName())));
+
   }
 
   @Test
-  public void h_deleteLdapGroupTest() {
-    ldapClient.deleteGroup("newGroup");
+  public void h_deleteLdapUserTest() {
+    ldapClient.deleteUser(posixUser.getUid());
   }
 
   @Test
-  public void getLdapGroupsTest() {
-    ldapClient.getPosixGroups();
+  public void i_deleteLdapGroupTest() {
+    ldapClient.deleteGroup(posixGroup.getCommonName());
   }
 
   @Test
-  public void getLdapUsersTest() {
+  public void j_getLdapGroupsTest() {
+    List<PosixGroup> groups = ldapClient.getPosixGroups();
+    assertNotNull(groups);
+  }
 
+  @Test
+  public void k_getLdapUsersTest() {
+    List<PosixUser> users = ldapClient.getPosixUsers();
+    assertNotNull(users);
   }
 
   @Test
   public void getNewGidNumber() {
-    log.debug("{}", ldapClient.generateGroupIdNumber());
-  }
-
-  @Test
-  public void groupEqualityTest() {
-
-    assertTrue(
-        ldapClient.equalGroups(ldapClient.getPosixGroup(2001), ldapClient.getPosixGroup("user")));
-
+    assertNotNull(ldapClient.generateGroupIdNumber());
   }
 }
