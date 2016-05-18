@@ -9,9 +9,9 @@
 
 package edu.kit.scc;
 
-import edu.kit.scc.dto.PosixGroup;
-import edu.kit.scc.dto.PosixUser;
 import edu.kit.scc.ldap.LdapClient;
+import edu.kit.scc.ldap.PosixGroup;
+import edu.kit.scc.ldap.PosixUser;
 import edu.kit.scc.scim.ScimGroup;
 import edu.kit.scc.scim.ScimUser;
 import edu.kit.scc.scim.ScimUser.Meta;
@@ -153,7 +153,7 @@ public class IdentityHarmonizer {
 
       if (!user.isActive() && user.getMeta() != null) {
         posixUser.setHomeDirectory(user.getMeta().get("homeDirectory"));
-        posixUser.setUidNumber(Integer.valueOf(user.getMeta().get("uidNumber")));
+        posixUser.setUidNumber(user.getMeta().get("uidNumber"));
 
         ldapClient.updatePosixUser(posixUser);
 

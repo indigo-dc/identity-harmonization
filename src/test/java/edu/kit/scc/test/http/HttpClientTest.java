@@ -12,7 +12,7 @@ package edu.kit.scc.test.http;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
-import edu.kit.scc.Application;
+import edu.kit.scc.IdentityHarmonizationService;
 import edu.kit.scc.http.HttpClient;
 import edu.kit.scc.http.HttpResponse;
 
@@ -25,7 +25,7 @@ import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = Application.class)
+@SpringApplicationConfiguration(classes = IdentityHarmonizationService.class)
 public class HttpClientTest {
   private static final Logger log = LoggerFactory.getLogger(HttpClientTest.class);
 

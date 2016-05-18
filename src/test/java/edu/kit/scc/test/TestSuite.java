@@ -9,14 +9,16 @@
 
 package edu.kit.scc.test;
 
+import edu.kit.scc.test.http.HttpClientTest;
+import edu.kit.scc.test.ldap.LdapClientTest;
+import edu.kit.scc.test.redis.RedisClientTest;
+
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
-import edu.kit.scc.test.http.HttpClientTest;
-import edu.kit.scc.test.ldap.LdapClientTest;
-
 @RunWith(Suite.class)
-@Suite.SuiteClasses({HttpClientTest.class, LdapClientTest.class})
+@Suite.SuiteClasses({CreatePosixUserTest.class, HttpClientTest.class, LdapClientTest.class,
+    RedisClientTest.class})
 public class TestSuite {
 
 }

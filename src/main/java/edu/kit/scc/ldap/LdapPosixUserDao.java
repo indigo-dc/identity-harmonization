@@ -9,15 +9,16 @@
 
 package edu.kit.scc.ldap;
 
-import edu.kit.scc.dao.PosixUserDao;
-import edu.kit.scc.dto.PosixUser;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.ldap.NameAlreadyBoundException;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.filter.AndFilter;
 import org.springframework.ldap.filter.EqualsFilter;
 import org.springframework.ldap.support.LdapUtils;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
@@ -27,32 +28,31 @@ import javax.naming.directory.BasicAttribute;
 import javax.naming.directory.BasicAttributes;
 import javax.naming.ldap.LdapName;
 
-public class LdapPosixUserDao implements PosixUserDao {
+@Component
+public class LdapPosixUserDao {
   private static final Logger log = LoggerFactory.getLogger(LdapPosixUserDao.class);
 
+  @Autowired
   private LdapTemplate ldapTemplate;
 
+  @Value("${ldap.userBase}")
   private String userBase;
 
-  public void setLdapTemplate(LdapTemplate ldapTemplate) {
-    this.ldapTemplate = ldapTemplate;
-  }
-
-  public void setUserBase(String userBase) {
-    this.userBase = userBase;
-  }
-
-  @Override
+  /**
+   * Gets all POSIX account LDAP entries.
+   * 
+   * @return a {@link List} of {@link PosixUser}
+   */
   public List<PosixUser> getAllUsers() {
     return ldapTemplate.search(userBase, "(objectclass=posixAccount)",
         new LdapPosixUserAttributeMapper());
   }
 
   /**
-   * Get all user with the specified uidNumber.
+   * Gets all users with the specified uidNumber.
    * 
    * @param uidNumber the user's uidNumber
-   * @return a list of {@link edu.kit.scc.dto.PosixUser}
+   * @return a {@link List} {@link edu.kit.scc.ldap.PosixUser}
    */
   public List<PosixUser> getAllUsers(int uidNumber) {
     AndFilter andFilter = new AndFilter();
@@ -63,19 +63,48 @@ public class LdapPosixUserDao implements PosixUserDao {
     return ldapTemplate.search("", andFilter.encode(), new LdapPosixUserAttributeMapper());
   }
 
-  @Override
-  public List<PosixUser> getUserDetails(String uid) {
+  /**
+   * Gets the user's details.
+   * 
+   * @param uid the user's uid
+   * @return a {@link PosixUser}
+   */
+  public PosixUser getUserDetails(String uid) {
     AndFilter andFilter = new AndFilter();
     andFilter.and(new EqualsFilter("objectclass", "posixAccount"))
         .and(new EqualsFilter("uid", uid));
     log.debug("LDAP query {}", andFilter.encode());
 
-    return ldapTemplate.search("", andFilter.encode(), new LdapPosixUserAttributeMapper());
+    List<PosixUser> results =
+        ldapTemplate.search("", andFilter.encode(), new LdapPosixUserAttributeMapper());
+    if (results == null || results.isEmpty()) {
+      log.warn("No users with uid {} found", uid);
+      return null;
+    }
+    if (results.size() > 1) {
+      log.warn("Multiple users with uid {} found", uid);
+    }
+    return results.get(0);
   }
 
-  @Override
-  public void insertUser(PosixUser posixUser) {
+  /**
+   * Inserts a new POSIX user into the LDAP directory.
+   * 
+   * @param posixUser the {@link PosixUser} to insert
+   * @return the {@link PosixUser} inserted
+   */
+  public PosixUser insertUser(PosixUser posixUser) {
+    if (posixUser.commonName == null || posixUser.gidNumber == null
+        || posixUser.homeDirectory == null || posixUser.surName == null || posixUser.uid == null
+        || posixUser.uidNumber == null) {
+      log.warn("PosixUser has missing mandatory attributes");
+      return null;
+    }
+
     BasicAttribute personBasicAttribute = new BasicAttribute("objectclass");
+    personBasicAttribute.add("extensibleObject");
+    personBasicAttribute.add("inetOrgPerson");
+    personBasicAttribute.add("organizationalPerson");
     personBasicAttribute.add("person");
     personBasicAttribute.add("posixAccount");
 
@@ -88,6 +117,9 @@ public class LdapPosixUserDao implements PosixUserDao {
     personAttributes.put("gidNumber", String.valueOf(posixUser.getGidNumber()));
     personAttributes.put("homeDirectory", posixUser.getHomeDirectory());
 
+    if (posixUser.getUniqueIdentifier() != null) {
+      personAttributes.put("uniqueIdentifier", posixUser.getUniqueIdentifier());
+    }
     if (posixUser.getDescription() != null) {
       personAttributes.put("description", posixUser.getDescription());
     }
@@ -99,6 +131,12 @@ public class LdapPosixUserDao implements PosixUserDao {
     }
     if (posixUser.getUserPassword() != null) {
       personAttributes.put("userPassword", posixUser.getUserPassword());
+    }
+    if (posixUser.getGivenName() != null) {
+      personAttributes.put("givenName", posixUser.getGivenName());
+    }
+    if (posixUser.getMail() != null) {
+      personAttributes.put("mail", posixUser.getMail());
     }
 
     LdapName newUserDn = LdapUtils.emptyLdapName();
@@ -107,27 +145,55 @@ public class LdapPosixUserDao implements PosixUserDao {
       newUserDn.add("uid=" + posixUser.getUid());
       log.debug("Insert {}", newUserDn.toString());
       ldapTemplate.bind(newUserDn, null, personAttributes);
-    } catch (InvalidNameException e) {
-      e.printStackTrace();
+
+      return posixUser;
+    } catch (InvalidNameException ex) {
+      log.error("ERROR {}", ex.toString());
+      // ex.printStackTrace();
+    } catch (NameAlreadyBoundException ex) {
+      log.error("ERROR {}", ex.toString());
     }
+    return null;
   }
 
-  @Override
-  public void updateUser(PosixUser posixUser) {
+  /**
+   * Updates a POSIX user in the LDAP directory.
+   * 
+   * @param posixUser the {@link PosixUser} to update
+   * @return the {@link PosixUser} updated
+   */
+  public PosixUser updateUser(PosixUser posixUser) {
     BasicAttribute personBasicAttribute = new BasicAttribute("objectclass");
+    personBasicAttribute.add("extensibleObject");
+    personBasicAttribute.add("inetOrgPerson");
+    personBasicAttribute.add("organizationalPerson");
     personBasicAttribute.add("person");
     personBasicAttribute.add("posixAccount");
 
     Attributes personAttributes = new BasicAttributes();
     personAttributes.put(personBasicAttribute);
-    personAttributes.put("cn", posixUser.getCommonName());
-    personAttributes.put("sn", posixUser.getSurName());
-    personAttributes.put("description", posixUser.getDescription());
-    personAttributes.put("uid", posixUser.getUid());
-    personAttributes.put("uidNumber", String.valueOf(posixUser.getUidNumber()));
-    personAttributes.put("gidNumber", String.valueOf(posixUser.getGidNumber()));
-    personAttributes.put("homeDirectory", posixUser.getHomeDirectory());
 
+    if (posixUser.getCommonName() != null) {
+      personAttributes.put("cn", posixUser.getCommonName());
+    }
+    if (posixUser.getSurName() != null) {
+      personAttributes.put("sn", posixUser.getSurName());
+    }
+    if (posixUser.getUid() != null) {
+      personAttributes.put("uid", posixUser.getUid());
+    }
+    if (posixUser.getUidNumber() != null) {
+      personAttributes.put("uidNumber", String.valueOf(posixUser.getUidNumber()));
+    }
+    if (posixUser.getGidNumber() != null) {
+      personAttributes.put("gidNumber", String.valueOf(posixUser.getGidNumber()));
+    }
+    if (posixUser.getHomeDirectory() != null) {
+      personAttributes.put("homeDirectory", posixUser.getHomeDirectory());
+    }
+    if (posixUser.getUniqueIdentifier() != null) {
+      personAttributes.put("uniqueIdentifier", posixUser.getUniqueIdentifier());
+    }
     if (posixUser.getDescription() != null) {
       personAttributes.put("description", posixUser.getDescription());
     }
@@ -140,6 +206,12 @@ public class LdapPosixUserDao implements PosixUserDao {
     if (posixUser.getUserPassword() != null) {
       personAttributes.put("userPassword", posixUser.getUserPassword());
     }
+    if (posixUser.getGivenName() != null) {
+      personAttributes.put("givenName", posixUser.getGivenName());
+    }
+    if (posixUser.getMail() != null) {
+      personAttributes.put("mail", posixUser.getMail());
+    }
 
     LdapName userDn = LdapUtils.emptyLdapName();
     try {
@@ -147,21 +219,34 @@ public class LdapPosixUserDao implements PosixUserDao {
       userDn.add("uid=" + posixUser.getUid());
       log.debug("Update {}", userDn.toString());
       ldapTemplate.rebind(userDn, null, personAttributes);
-    } catch (InvalidNameException e) {
-      e.printStackTrace();
+
+      return posixUser;
+    } catch (InvalidNameException ex) {
+      log.error("ERROR {}", ex.toString());
+      // ex.printStackTrace();
     }
+    return null;
   }
 
-  @Override
-  public void deleteUser(PosixUser posixUser) {
+  /**
+   * Deletes a POSIX user from the LDAP directory.
+   * 
+   * @param posixUser the {@link PosixUser} to delete
+   * @return true if success
+   */
+  public boolean deleteUser(PosixUser posixUser) {
     LdapName userDn = LdapUtils.emptyLdapName();
     try {
       userDn = new LdapName(userBase);
       userDn.add("uid=" + posixUser.getUid());
       log.debug("Delete {}", userDn.toString());
       ldapTemplate.unbind(userDn);
-    } catch (InvalidNameException e) {
-      e.printStackTrace();
+
+      return true;
+    } catch (InvalidNameException ex) {
+      log.error("ERROR {}", ex.toString());
+      // ex.printStackTrace();
     }
+    return false;
   }
 }

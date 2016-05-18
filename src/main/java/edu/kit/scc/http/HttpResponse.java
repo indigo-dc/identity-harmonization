@@ -13,7 +13,7 @@ public class HttpResponse {
 
   public int statusCode;
 
-  public byte[] response;
+  public String response;
 
   /**
    * Base class for HTTP responses.
@@ -21,7 +21,7 @@ public class HttpResponse {
    * @param statusCode the responses' status code
    * @param response the response
    */
-  public HttpResponse(int statusCode, byte[] response) {
+  public HttpResponse(int statusCode, String response) {
     super();
     this.statusCode = statusCode;
     this.response = response;
@@ -31,18 +31,18 @@ public class HttpResponse {
     return statusCode;
   }
 
-  public byte[] getResponse() {
+  public String getResponse() {
     return response;
   }
 
   public String getResponseString() {
-    return new String(response);
+    return response;
   }
 
   @Override
   public String toString() {
     return "HttpResponse [statusCode=" + statusCode + ", "
-        + (response != null ? "response=" + new String(response) : "") + "]";
+        + (response != null ? "response=" + response : "") + "]";
   }
 
 }

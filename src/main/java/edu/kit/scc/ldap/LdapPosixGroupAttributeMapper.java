@@ -9,8 +9,6 @@
 
 package edu.kit.scc.ldap;
 
-import edu.kit.scc.dto.PosixGroup;
-
 import org.springframework.ldap.core.AttributesMapper;
 
 import java.util.ArrayList;
@@ -30,7 +28,7 @@ public class LdapPosixGroupAttributeMapper implements AttributesMapper<PosixGrou
     }
     Attribute gidNumber = attributes.get("gidNumber");
     if (gidNumber != null) {
-      posixGroup.setGidNumber(Integer.valueOf((String) gidNumber.get()));
+      posixGroup.setGidNumber((String) gidNumber.get());
     }
     Attribute memberUids = attributes.get("memberUid");
     if (memberUids != null) {

@@ -7,7 +7,7 @@
  * http://www.apache.org/licenses/LICENSE-2.0
  */
 
-package edu.kit.scc.dto;
+package edu.kit.scc.ldap;
 
 import java.util.Arrays;
 import java.util.List;
@@ -15,7 +15,7 @@ import java.util.List;
 public class PosixGroup {
 
   String commonName;
-  int gidNumber;
+  String gidNumber;
   List<String> memberUids;
   String description;
   byte[] userPassword;
@@ -28,11 +28,11 @@ public class PosixGroup {
     this.commonName = commonName;
   }
 
-  public int getGidNumber() {
+  public String getGidNumber() {
     return gidNumber;
   }
 
-  public void setGidNumber(int gidNumber) {
+  public void setGidNumber(String gidNumber) {
     this.gidNumber = gidNumber;
   }
 

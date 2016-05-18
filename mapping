@@ -1,0 +1,79 @@
+OIDC
+{
+    "email": "benjamin.ertl@kit.edu",
+    "email_verified": true,
+    "family_name": "Ertl",
+    "groups": [
+        {
+            "id": "54e3843d-2b9d-45df-a76d-03bdf2fe46a2",
+            "name": "Users"
+        },
+        {
+            "id": "19a8dd29-2b8d-4efd-85cf-f8091037d51f",
+            "name": "Developers"
+        }
+    ],
+    "name": "Benjamin",
+    "organisation_name": "indigo-dc",
+    "preferred_username": "benjamin",
+    "sub": "54d75bff-7ae3-4d65-81db-81c456020655"
+}
+
+SCIM
+{
+  "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+  "id": "90001",
+  "externalId": "54d75bff-7ae3-4d65-81db-81c456020655",
+  "userName": "benjamin",
+  "name": {
+    "familyName": "Ertl",
+    "givenName": "Benjamin",
+  },
+  "emails": [
+    {
+      "value": "benjamin.ertl@kit.edu",
+    }
+  ],
+  "groups": [
+    {
+      "value": "54e3843d-2b9d-45df-a76d-03bdf2fe46a2",
+      "$ref": "99991",
+      "display": "Users"
+    },
+    {
+      "value": "19a8dd29-2b8d-4efd-85cf-f8091037d51f",
+      "$ref": "99992",
+      "display": "Developers"
+    }
+  ],
+  "meta": {
+    "organisation_name": "indigo-dc",
+  }
+}
+
+POSIX Account
+
+dn: uid=benjamin,ou=users,dc=test,dc=kit,dc=edu
+objectclass: extensibleObject
+objectclass: top
+objectclass: posixAccount
+objectclass: person
+cn: benjamin.ertl@kit.edu
+gidNumber: 99991
+homeDirectory: /home/benjamin
+sn: Ertl
+uid: benjamin
+uidNumber: 90001
+description: indigo-dc
+uniqueIdentifier: 54d75bff-7ae3-4d65-81db-81c456020655
+givenName: Benjamin
+mail: benjamin.ertl@kit.edu
+
+POSIX Group
+
+dn: cn=Users,ou=groups,dc=test,dc=kit,dc=edu
+objectClass: top
+objectClass: posixGroup
+cn: Users
+gidNumber: 99991
+memberUid: benjamin

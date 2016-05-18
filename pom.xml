@@ -22,7 +22,10 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
-					<skipTests>true</skipTests>
+					<skipTests>false</skipTests>
+					<includes>
+						<include>edu.kit.scc.test.TestSuite</include>
+					</includes>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -55,7 +58,7 @@
 		<version>1.3.1.RELEASE</version>
 	</parent>
 	<dependencies>
-		<!-- Spring -->
+		<!-- tag::Spring[] -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
@@ -68,22 +71,57 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-thymeleaf</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-redis</artifactId>
+		</dependency>
+		<!-- end::Spring[] -->
 
-		<!-- LDAP -->
+		<!-- tag::Test[] -->
+		<dependency>
+			<groupId>com.jayway.restassured</groupId>
+			<artifactId>rest-assured</artifactId>
+			<version>2.9.0</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.github.kstyrc</groupId>
+			<artifactId>embedded-redis</artifactId>
+			<version>0.6</version>
+		</dependency>
+		<dependency>
+			<groupId>com.unboundid</groupId>
+			<artifactId>unboundid-ldapsdk</artifactId>
+			<version>3.1.1</version>
+		</dependency>
+		<!-- end::Test[] -->
+
+		<!-- tag::LDAP[] -->
 		<dependency>
 			<groupId>org.springframework.ldap</groupId>
 			<artifactId>spring-ldap-core</artifactId>
 			<version>2.0.4.RELEASE</version>
 		</dependency>
+		<!-- end::LDAP[] -->
 
-		<!-- OpenID Connect -->
+		<!-- tag::OpenID Connect[] -->
 		<dependency>
 			<groupId>com.nimbusds</groupId>
 			<artifactId>oauth2-oidc-sdk</artifactId>
 			<version>5.1</version>
 		</dependency>
+		<dependency>
+			<groupId>com.nimbusds</groupId>
+			<artifactId>nimbus-jose-jwt</artifactId>
+			<version>4.16.2</version>
+		</dependency>
+		<!-- end::OpenID Connect[] -->
 
-		<!-- SAML -->
+		<!-- tag::SAML[] -->
 		<dependency>
 			<groupId>org.opensaml</groupId>
 			<artifactId>opensaml</artifactId>
@@ -95,25 +133,23 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+		<!-- end::SAML[] -->
 
-		<!-- Utils -->
+		<!-- tag::Utils[] -->
 		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
-			<version>18.0</version>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcprov-jdk15on</artifactId>
+			<version>1.54</version>
 		</dependency>
 		<dependency>
 			<groupId>org.json</groupId>
 			<artifactId>json</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>org.jdom</groupId>
 			<artifactId>jdom</artifactId>
 			<version>2.0.2</version>
 		</dependency>
+		<!-- end::Utils[] -->
 	</dependencies>
 </project>

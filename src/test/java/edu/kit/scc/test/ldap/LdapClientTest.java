@@ -10,12 +10,11 @@
 package edu.kit.scc.test.ldap;
 
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
-import edu.kit.scc.Application;
-import edu.kit.scc.dto.PosixGroup;
-import edu.kit.scc.dto.PosixUser;
+import edu.kit.scc.IdentityHarmonizationService;
 import edu.kit.scc.ldap.LdapClient;
+import edu.kit.scc.ldap.PosixGroup;
+import edu.kit.scc.ldap.PosixUser;
 
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -26,12 +25,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.List;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = Application.class)
+@SpringApplicationConfiguration(classes = IdentityHarmonizationService.class)
+@ActiveProfiles("development")
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LdapClientTest {
 
@@ -44,14 +45,14 @@ public class LdapClientTest {
   protected static PosixUser posixUser;
 
   @BeforeClass
-  public static void setUpBeforeClass() {
+  public static void setUpBeforeClass() throws Exception {
     String userCn = "newUser";
     String userSn = "newUser";
     String description = "new posix user";
     String homeDirectory = "/home/newUser";
     String uid = "newUser";
-    int uidNumber = 6001;
-    int userGidNumber = 3333;
+    String uidNumber = "6001";
+    String userGidNumber = "3333";
 
     posixUser = new PosixUser();
     posixUser.setCommonName(userCn);
@@ -63,12 +64,11 @@ public class LdapClientTest {
     posixUser.setGidNumber(userGidNumber);
 
     String groupCn = "newGroup";
-    int gidNumber = 3333;
+    String gidNumber = "3333";
 
     posixGroup = new PosixGroup();
     posixGroup.setCommonName(groupCn);
     posixGroup.setGidNumber(gidNumber);
-
   }
 
   @Test
@@ -116,19 +116,11 @@ public class LdapClientTest {
 
   @Test
   public void f_getLdapGroupTest() {
-    PosixGroup group = ldapClient.getPosixGroup(posixGroup.getCommonName());
+    PosixGroup group = ldapClient.getPosixGroupByCn(posixGroup.getCommonName());
 
     assertNotNull(group);
 
     log.debug(group.toString());
-  }
-
-  @Test
-  public void g_groupEqualityTest() {
-
-    assertTrue(ldapClient.equalGroups(ldapClient.getPosixGroup(posixGroup.getGidNumber()),
-        ldapClient.getPosixGroup(posixGroup.getCommonName())));
-
   }
 
   @Test

@@ -9,16 +9,9 @@
 
 package edu.kit.scc.ldap;
 
-import edu.kit.scc.dto.PosixGroup;
-import edu.kit.scc.dto.PosixUser;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.ldap.core.LdapTemplate;
-import org.springframework.ldap.core.support.LdapContextSource;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -36,55 +29,6 @@ public class LdapClient {
 
   private static Logger log = LoggerFactory.getLogger(LdapClient.class);
 
-  @Value("${ldap.url}")
-  private String url;
-
-  @Value("${ldap.searchBase}")
-  private String searchBase;
-
-  @Value("${ldap.userBase}")
-  private String userBase;
-
-  @Value("${ldap.groupBase}")
-  private String groupBase;
-
-  @Value("${ldap.bindDn}")
-  private String bindDn;
-
-  @Value("${ldap.bindPassword}")
-  private String password;
-
-  @Bean
-  LdapContextSource contextSource() {
-    LdapContextSource ldapContextSource = new LdapContextSource();
-    ldapContextSource.setUrl(url);
-    ldapContextSource.setBase(searchBase);
-    ldapContextSource.setUserDn(bindDn);
-    ldapContextSource.setPassword(password);
-    return ldapContextSource;
-  }
-
-  @Bean
-  LdapTemplate ldapTemplate(LdapContextSource contextSource) {
-    return new LdapTemplate(contextSource);
-  }
-
-  @Bean
-  LdapPosixUserDao ldapPosixUser(LdapTemplate ldapTemplate) {
-    LdapPosixUserDao ldapUserDao = new LdapPosixUserDao();
-    ldapUserDao.setLdapTemplate(ldapTemplate);
-    ldapUserDao.setUserBase(userBase);
-    return ldapUserDao;
-  }
-
-  @Bean
-  LdapPosixGroupDao ldapPosixGroup(LdapTemplate ldapTemplate) {
-    LdapPosixGroupDao ldapGroupDao = new LdapPosixGroupDao();
-    ldapGroupDao.setLdapTemplate(ldapTemplate);
-    ldapGroupDao.setGroupBase(groupBase);
-    return ldapGroupDao;
-  }
-
   @Autowired
   private LdapPosixUserDao ldapPosixUser;
 
@@ -98,14 +42,7 @@ public class LdapClient {
    * @return a {@link PosixUser} with the LDAP user information
    */
   public PosixUser getPosixUser(String uid) {
-    List<PosixUser> userList = ldapPosixUser.getUserDetails(uid);
-    PosixUser user = null;
-
-    if (userList != null && !userList.isEmpty()) {
-      user = userList.get(0);
-      log.debug(user.toString());
-    }
-    return user;
+    return ldapPosixUser.getUserDetails(uid);
   }
 
   /**
@@ -114,15 +51,8 @@ public class LdapClient {
    * @param cn the group's common name
    * @return a {@link PosixGroup} with the LDAP group information
    */
-  public PosixGroup getPosixGroup(String cn) {
-    List<PosixGroup> groupList = ldapPosixGroup.getGroupDetails(cn);
-    PosixGroup group = null;
-
-    if (groupList != null && !groupList.isEmpty()) {
-      group = groupList.get(0);
-      log.debug(group.toString());
-    }
-    return group;
+  public PosixGroup getPosixGroupByCn(String cn) {
+    return ldapPosixGroup.getGroupDetails(cn);
   }
 
   /**
@@ -131,15 +61,8 @@ public class LdapClient {
    * @param gidNumber the group's gidNumber
    * @return a {@link PosixGroup} with the LDAP group information
    */
-  public PosixGroup getPosixGroup(int gidNumber) {
-    List<PosixGroup> groupList = ldapPosixGroup.getGroupDetails(gidNumber);
-    PosixGroup group = null;
-
-    if (groupList != null && !groupList.isEmpty()) {
-      group = groupList.get(0);
-      log.debug(group.toString());
-    }
-    return group;
+  public PosixGroup getPosixGroupByGidNumber(String gidNumber) {
+    return ldapPosixGroup.getGroupDetails(Integer.valueOf(gidNumber.trim()));
   }
 
   public List<PosixGroup> getUserGroups(String uid) {
@@ -202,11 +125,12 @@ public class LdapClient {
    * Deletes a specific LDAP user.
    * 
    * @param uid the user's uid
+   * @return true if success
    */
-  public void deleteUser(String uid) {
+  public boolean deleteUser(String uid) {
     PosixUser user = new PosixUser();
     user.setUid(uid);
-    ldapPosixUser.deleteUser(user);
+    return ldapPosixUser.deleteUser(user);
   }
 
   /**
@@ -218,7 +142,7 @@ public class LdapClient {
    */
   public PosixGroup createPosixGroup(PosixGroup group) {
     ldapPosixGroup.insertGroup(group);
-    return getPosixGroup(group.getCommonName());
+    return getPosixGroupByCn(group.getCommonName());
   }
 
   /**
@@ -229,42 +153,19 @@ public class LdapClient {
    */
   public PosixUser createPosixUser(PosixUser user) {
     ldapPosixUser.insertUser(user);
-
     return getPosixUser(user.getUid());
-  }
-
-  /**
-   * Updates a specific LDAP POSIX group.
-   * 
-   * @param cn the group's common name
-   * @param gidNumber the group's gid number
-   * @param description the group's description
-   * @param userPassword the group's user password
-   * @return the updated {@link PosixGroup}
-   */
-  public PosixGroup updatePosixGroup(String cn, int gidNumber, String description,
-      String userPassword) {
-    PosixGroup group = new PosixGroup();
-    group.setCommonName(cn);
-    group.setGidNumber(gidNumber);
-    group.setDescription(description);
-    if (userPassword != null) {
-      group.setUserPassword(userPassword.getBytes());
-    }
-    ldapPosixGroup.updateGroup(group);
-
-    return getPosixGroup(cn);
   }
 
   /**
    * Deletes a specific LDAP group.
    * 
    * @param cn the group's common name
+   * @return true on success
    */
-  public void deleteGroup(String cn) {
+  public boolean deleteGroup(String cn) {
     PosixGroup group = new PosixGroup();
     group.setCommonName(cn);
-    ldapPosixGroup.deleteGroup(group);
+    return ldapPosixGroup.deleteGroup(group);
   }
 
   /**
@@ -272,11 +173,12 @@ public class LdapClient {
    * 
    * @param cn the group's common name
    * @param memberUid the user's uid
+   * @return true on success
    */
-  public void addGroupMember(String cn, String memberUid) {
+  public boolean addGroupMember(String cn, String memberUid) {
     PosixGroup group = new PosixGroup();
     group.setCommonName(cn);
-    ldapPosixGroup.addMember(group, memberUid);
+    return ldapPosixGroup.addMember(group, memberUid);
   }
 
   /**
@@ -284,28 +186,12 @@ public class LdapClient {
    * 
    * @param cn the group's common name
    * @param memberUid the user's uid
+   * @return true on success
    */
-  public void removeGroupMember(String cn, String memberUid) {
+  public boolean removeGroupMember(String cn, String memberUid) {
     PosixGroup group = new PosixGroup();
     group.setCommonName(cn);
-    ldapPosixGroup.removeMember(group, memberUid);
-  }
-
-  /**
-   * Compares two POSIX LDAP groups.
-   * 
-   * @param group1 {@link PosixGroup} group one
-   * @param group2 {@link PosixGroup} group two
-   * @return true if groups are equal (name and gidNumber)
-   * 
-   */
-  public boolean equalGroups(PosixGroup group1, PosixGroup group2) {
-    if (group1.getGidNumber() == group2.getGidNumber()) {
-      if (group1.getCommonName().equals(group2.getCommonName())) {
-        return true;
-      }
-    }
-    return false;
+    return ldapPosixGroup.removeMember(group, memberUid);
   }
 
   /**
@@ -313,17 +199,18 @@ public class LdapClient {
    * 
    * @return a new int gidNumber
    */
+  @Deprecated
   public int generateGroupIdNumber() {
     int max = 99999;
     int min = 10000;
     Random rand = new Random();
-    ArrayList<Integer> existingGidNumbers = new ArrayList<Integer>();
+    ArrayList<String> existingGidNumbers = new ArrayList<String>();
     List<PosixGroup> groups = ldapPosixGroup.getAllGroups();
     for (PosixGroup group : groups) {
       existingGidNumbers.add(group.getGidNumber());
     }
     int randomInt = rand.nextInt((max - min) + 1) + min;
-    while (existingGidNumbers.contains(randomInt)) {
+    while (existingGidNumbers.contains(String.valueOf(randomInt))) {
       randomInt = rand.nextInt((max - min) + 1) + min;
     }
     return randomInt;
@@ -334,17 +221,18 @@ public class LdapClient {
    * 
    * @return a new int uidNumber
    */
+  @Deprecated
   public int generateUserIdNumber() {
     int max = 99999;
     int min = 10000;
     Random rand = new Random();
-    ArrayList<Integer> existingUidNumbers = new ArrayList<Integer>();
+    ArrayList<String> existingUidNumbers = new ArrayList<String>();
     List<PosixUser> users = ldapPosixUser.getAllUsers();
     for (PosixUser user : users) {
       existingUidNumbers.add(user.getUidNumber());
     }
     int randomInt = rand.nextInt((max - min) + 1) + min;
-    while (existingUidNumbers.contains(randomInt)) {
+    while (existingUidNumbers.contains(String.valueOf(randomInt))) {
       randomInt = rand.nextInt((max - min) + 1) + min;
     }
     return randomInt;

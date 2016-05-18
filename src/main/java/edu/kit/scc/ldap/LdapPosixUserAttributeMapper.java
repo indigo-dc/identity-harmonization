@@ -9,8 +9,6 @@
 
 package edu.kit.scc.ldap;
 
-import edu.kit.scc.dto.PosixUser;
-
 import org.springframework.ldap.core.AttributesMapper;
 
 import javax.naming.NamingException;
@@ -41,11 +39,11 @@ public class LdapPosixUserAttributeMapper implements AttributesMapper<PosixUser>
     }
     Attribute gidNumber = attributes.get("gidNumber");
     if (gidNumber != null) {
-      posixUser.setGidNumber(Integer.valueOf((String) gidNumber.get()));
+      posixUser.setGidNumber((String) gidNumber.get());
     }
     Attribute uidNumber = attributes.get("uidNumber");
     if (uidNumber != null) {
-      posixUser.setUidNumber(Integer.valueOf((String) uidNumber.get()));
+      posixUser.setUidNumber((String) uidNumber.get());
     }
     Attribute description = attributes.get("description");
     if (description != null) {
@@ -62,6 +60,18 @@ public class LdapPosixUserAttributeMapper implements AttributesMapper<PosixUser>
     Attribute loginShell = attributes.get("loginShell");
     if (loginShell != null) {
       posixUser.setLoginShell((String) loginShell.get());
+    }
+    Attribute uniqueIdentifier = attributes.get("uniqueIdentifier");
+    if (uniqueIdentifier != null) {
+      posixUser.setUniqueIdentifier((String) uniqueIdentifier.get());
+    }
+    Attribute mail = attributes.get("mail");
+    if (mail != null) {
+      posixUser.setMail((String) mail.get());
+    }
+    Attribute givenName = attributes.get("givenName");
+    if (givenName != null) {
+      posixUser.setGivenName((String) givenName.get());
     }
     return posixUser;
   }

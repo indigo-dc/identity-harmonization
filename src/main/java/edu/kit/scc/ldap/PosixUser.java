@@ -7,23 +7,25 @@
  * http://www.apache.org/licenses/LICENSE-2.0
  */
 
-package edu.kit.scc.dto;
+package edu.kit.scc.ldap;
 
 import java.util.Arrays;
 
 public class PosixUser {
-
+  String uniqueIdentifier;
   String uid;
   String commonName;
+  String givenName;
   String surName;
   String homeDirectory;
   String description;
   String gecos;
   String loginShell;
+  String mail;
   byte[] userPassword;
 
-  int uidNumber;
-  int gidNumber;
+  String uidNumber;
+  String gidNumber;
 
   public String getGecos() {
     return gecos;
@@ -89,31 +91,59 @@ public class PosixUser {
     this.description = description;
   }
 
-  public int getUidNumber() {
+  public String getUidNumber() {
     return uidNumber;
   }
 
-  public void setUidNumber(int uidNumber) {
+  public void setUidNumber(String uidNumber) {
     this.uidNumber = uidNumber;
   }
 
-  public int getGidNumber() {
+  public String getGidNumber() {
     return gidNumber;
   }
 
-  public void setGidNumber(int gidNumber) {
+  public void setGidNumber(String gidNumber) {
     this.gidNumber = gidNumber;
+  }
+
+  public String getUniqueIdentifier() {
+    return uniqueIdentifier;
+  }
+
+  public void setUniqueIdentifier(String uniqueIdentifier) {
+    this.uniqueIdentifier = uniqueIdentifier;
+  }
+
+  public String getGivenName() {
+    return givenName;
+  }
+
+  public void setGivenName(String givenName) {
+    this.givenName = givenName;
+  }
+
+  public String getMail() {
+    return mail;
+  }
+
+  public void setMail(String mail) {
+    this.mail = mail;
   }
 
   @Override
   public String toString() {
-    return "PosixUser [" + (uid != null ? "uid=" + uid + ", " : "")
+    return "PosixUser ["
+        + (uniqueIdentifier != null ? "uniqueIdentifier=" + uniqueIdentifier + ", " : "")
+        + (uid != null ? "uid=" + uid + ", " : "")
         + (commonName != null ? "commonName=" + commonName + ", " : "")
+        + (givenName != null ? "givenName=" + givenName + ", " : "")
         + (surName != null ? "surName=" + surName + ", " : "")
         + (homeDirectory != null ? "homeDirectory=" + homeDirectory + ", " : "")
         + (description != null ? "description=" + description + ", " : "")
         + (gecos != null ? "gecos=" + gecos + ", " : "")
         + (loginShell != null ? "loginShell=" + loginShell + ", " : "")
+        + (mail != null ? "mail=" + mail + ", " : "")
         + (userPassword != null ? "userPassword=" + Arrays.toString(userPassword) + ", " : "")
         + "uidNumber=" + uidNumber + ", gidNumber=" + gidNumber + "]";
   }

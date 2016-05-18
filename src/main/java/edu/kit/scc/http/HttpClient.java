@@ -9,16 +9,16 @@
 
 package edu.kit.scc.http;
 
-import com.google.common.io.ByteStreams;
-
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 
@@ -143,6 +143,8 @@ public class HttpClient {
     HttpResponse response = null;
     OutputStream out = null;
     InputStream in = null;
+    BufferedReader buffReader = null;
+
     try {
       urlConnection.setRequestMethod(method.toString());
       urlConnection.setRequestProperty("Accept", "*/*");
@@ -163,8 +165,15 @@ public class HttpClient {
 
       urlConnection.connect();
       in = urlConnection.getInputStream();
+      buffReader = new BufferedReader(new InputStreamReader(in));
 
-      response = new HttpResponse(urlConnection.getResponseCode(), ByteStreams.toByteArray(in));
+      StringBuffer stringBuffer = new StringBuffer();
+      String inputLine;
+      while ((inputLine = buffReader.readLine()) != null) {
+        stringBuffer.append(inputLine);
+      }
+
+      response = new HttpResponse(urlConnection.getResponseCode(), stringBuffer.toString());
 
     } catch (IOException e) {
       // e.printStackTrace();
@@ -184,6 +193,14 @@ public class HttpClient {
       if (out != null) {
         try {
           out.close();
+        } catch (IOException e) {
+          // e.printStackTrace();
+          log.error("ERROR {}", e.getMessage());
+        }
+      }
+      if (buffReader != null) {
+        try {
+          buffReader.close();
         } catch (IOException e) {
           // e.printStackTrace();
           log.error("ERROR {}", e.getMessage());
