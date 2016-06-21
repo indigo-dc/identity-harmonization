@@ -18,3 +18,5 @@ target
 .settings
 .project
 .classpath
+.checkstyle
+.springBeans
