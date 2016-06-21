@@ -17,8 +17,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({CreatePosixUserTest.class, HttpClientTest.class, LdapClientTest.class,
-    RedisClientTest.class})
+@Suite.SuiteClasses({CreatePosixUserTest.class, LdapClientTest.class, RedisClientTest.class})
 public class TestSuite {
 
 }
