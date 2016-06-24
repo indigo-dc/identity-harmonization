@@ -31,6 +31,7 @@ import java.util.UUID;
 @ActiveProfiles("development")
 public class RedisClientTest {
 
+  @SuppressWarnings("unused")
   private static final Logger log = LoggerFactory.getLogger(RedisClientTest.class);
 
   @Autowired

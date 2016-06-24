@@ -145,6 +145,7 @@ public class LdapClientTest {
     assertNotNull(users);
   }
 
+  @SuppressWarnings("deprecation")
   @Test
   public void getNewGidNumber() {
     assertNotNull(ldapClient.generateGroupIdNumber());

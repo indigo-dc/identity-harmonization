@@ -46,6 +46,9 @@ public class RestServiceController {
   @Autowired
   private UserGenerator userGenerator;
 
+  @Autowired
+  private IdentityHarmonizer identityHarmonizer;
+
   /**
    * SCIM create user endpoint.
    * 
@@ -129,7 +132,6 @@ public class RestServiceController {
 
     log.debug("Request body {}", scimUsers);
 
-    IdentityHarmonizer identityHarmonizer = new IdentityHarmonizer();
     List<ScimUser> modifiedUsers = identityHarmonizer.harmonizeIdentities(scimUsers);
     if (!modifiedUsers.isEmpty()) {
       return new ResponseEntity<List<ScimUser>>(modifiedUsers, HttpStatus.OK);
@@ -157,7 +159,6 @@ public class RestServiceController {
 
     log.debug("Request body {}", scimUsers);
 
-    IdentityHarmonizer identityHarmonizer = new IdentityHarmonizer();
     List<ScimUser> modifiedUsers = identityHarmonizer.unlinkUsers(scimUsers);
     if (!modifiedUsers.isEmpty()) {
       return new ResponseEntity<List<ScimUser>>(modifiedUsers, HttpStatus.OK);
@@ -166,7 +167,13 @@ public class RestServiceController {
     return new ResponseEntity<String>("Conflicting information", HttpStatus.CONFLICT);
   }
 
-  private boolean verifyAuthorization(String basicAuthorization) {
+  /**
+   * Verifies the authorization.
+   * 
+   * @param basicAuthorization the authorization to verify
+   * @return true if the authorization could be verified, false otherwise
+   */
+  public boolean verifyAuthorization(String basicAuthorization) {
     String encodedCredentials = basicAuthorization.split(" ")[1];
     String[] credentials = new String(Base64.decodeBase64(encodedCredentials)).split(":");
 

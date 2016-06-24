@@ -11,7 +11,6 @@ package edu.kit.scc;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.core.env.AbstractEnvironment;
 
 @SpringBootApplication
 public class IdentityHarmonizationService {
@@ -23,7 +22,7 @@ public class IdentityHarmonizationService {
    */
   public static void main(String[] args) {
     // set development environment
-    //System.setProperty(AbstractEnvironment.ACTIVE_PROFILES_PROPERTY_NAME, "development");
+    // System.setProperty(AbstractEnvironment.ACTIVE_PROFILES_PROPERTY_NAME, "development");
 
     SpringApplication.run(IdentityHarmonizationService.class, args);
 

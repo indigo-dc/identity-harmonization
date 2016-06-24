@@ -17,8 +17,8 @@ import com.unboundid.ldap.sdk.LDAPException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Component;
 
 import redis.embedded.RedisServer;
 
@@ -27,14 +27,17 @@ import java.io.IOException;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
-@Configuration
+@Component
 @Profile("development")
 public class DevelopmentConfiguration {
 
   private static final Logger log = LoggerFactory.getLogger(DevelopmentConfiguration.class);
 
+  @Value("${ldap.port}")
+  private int ldapPort;
+
   @Value("${spring.redis.port}")
-  private int port;
+  private int redisPort;
 
   private static InMemoryDirectoryServer ds;
   private static RedisServer redisServer;
@@ -61,18 +64,25 @@ public class DevelopmentConfiguration {
     // be picked at runtime - which might be even better for tests btw
     config.addAdditionalBindCredentials("cn=admin", "password");
     config.setListenerConfigs(
-        new InMemoryListenerConfig("myListener", null, 33389, null, null, null));
+        new InMemoryListenerConfig("myListener", null, ldapPort, null, null, null));
 
     ds = new InMemoryDirectoryServer(config);
 
-    ds.startListening();
+    try {
+      ds.startListening();
+    } catch (LDAPException ex) {
+      log.warn("LDAP server already running?");
+    }
 
     // import your test data from ldif files
     ds.importFromLDIF(true, "src/test/resources/test-server.ldif");
-
     log.debug("Set-up in-memory redis...");
-    redisServer = new RedisServer(port);
-    redisServer.start();
+    redisServer = new RedisServer(redisPort);
+    try {
+      redisServer.start();
+    } catch (Exception ex) {
+      log.warn("Redis servier already running?");
+    }
   }
 
   /**
