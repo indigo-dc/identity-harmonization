@@ -20,6 +20,9 @@ import org.springframework.ldap.core.support.LdapContextSource;
 @Configuration
 public class ServiceConfiguration {
 
+  @Value("${ldap.port}")
+  private int ldapPort;
+
   @Value("${ldap.url}")
   private String url;
 

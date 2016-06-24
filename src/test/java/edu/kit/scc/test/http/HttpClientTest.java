@@ -11,30 +11,35 @@ package edu.kit.scc.test.http;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
+import edu.kit.scc.IdentityHarmonizationService;
 import edu.kit.scc.http.HttpClient;
 import edu.kit.scc.http.HttpResponse;
 
-import org.junit.BeforeClass;
+import org.apache.commons.codec.binary.Base64;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.nio.charset.StandardCharsets;
+
 @RunWith(SpringJUnit4ClassRunner.class)
+@SpringApplicationConfiguration(classes = IdentityHarmonizationService.class)
+@ActiveProfiles("development")
 public class HttpClientTest {
   private static final Logger log = LoggerFactory.getLogger(HttpClientTest.class);
 
-  private static HttpClient httpClient;
+  @Autowired
+  private HttpClient httpClient;
 
   protected static String httpUrl = "http://api.rottentomatoes.com/api/public/v1.0";
   protected static String httpsUrl = "https://launchlibrary.net/1.2/agency/NASA";
-
-  @BeforeClass
-  public static void setup() {
-    httpClient = new HttpClient();
-  }
 
   @Test
   public void makeHttpPostRequestTest() {
@@ -64,5 +69,119 @@ public class HttpClientTest {
     assertNotNull(httpResponse);
 
     log.debug(httpResponse.toString());
+  }
+
+
+  @Test
+  public void testMakeHttpGetRequestWrongUrl() {
+    String url = "invalid";
+
+    HttpResponse response = httpClient.makeHttpGetRequest(url);
+
+    assertNull(response);
+  }
+
+  @Test
+  public void testMakeHttpGetRequest() {
+    String url = "http://www.kit.edu";
+
+    HttpResponse response = httpClient.makeHttpGetRequest(url);
+
+    assertNotNull(response);
+    assertTrue(response.getStatusCode() == 200);
+  }
+
+  @Test
+  public void testMakeHttpGetRequestWithAuthorization() {
+    String url = "http://www.kit.edu";
+    String restUser = "test";
+    String restPassword = "test";
+    String auth = restUser + ":" + restPassword;
+    byte[] authZheader = auth.getBytes();
+    String authorizationHeader =
+        "Basic " + new String(Base64.encodeBase64(authZheader), StandardCharsets.UTF_8);
+
+    HttpResponse response = httpClient.makeHttpGetRequest(restUser, restPassword, url);
+
+    assertNotNull(response);
+    assertTrue(response.getStatusCode() == 200);
+  }
+
+  @Test
+  public void testMakeHttpsGetRequest() {
+    String url = "https://api.duckduckgo.com/?q=KIT&format=json&pretty=1";
+
+    HttpResponse response = httpClient.makeHttpsGetRequest(url);
+
+    // assertNotNull(response);
+    // assertTrue(response.getStatusCode() == 200);
+  }
+
+  @Test
+  public void testMakeHttpsGetRequestWithAuthorization() {
+    String url = "https://api.duckduckgo.com/?q=KIT&format=json&pretty=1";
+    String restUser = "test";
+    String restPassword = "test";
+    String auth = restUser + ":" + restPassword;
+    byte[] authZheader = auth.getBytes();
+    String authorizationHeader =
+        "Basic " + new String(Base64.encodeBase64(authZheader), StandardCharsets.UTF_8);
+
+    HttpResponse response = httpClient.makeHttpsGetRequest(restUser, restPassword, url);
+
+    // assertNotNull(response);
+    // assertTrue(response.getStatusCode() == 200);
+  }
+
+  @Test
+  public void testMakeHttpPostRequest() {
+    String url = "http://www.kit.edu";
+
+    HttpResponse response = httpClient.makeHttpPostRequest(null, url);
+
+    assertNotNull(response);
+    // assertTrue(response.getStatusCode() == 200);
+  }
+
+  @Test
+  public void testMakeHttpPostRequestWithAuthorization() {
+    String url = "http://www.kit.edu";
+    String restUser = "test";
+    String restPassword = "test";
+    String auth = restUser + ":" + restPassword;
+    byte[] authZheader = auth.getBytes();
+    String authorizationHeader =
+        "Basic " + new String(Base64.encodeBase64(authZheader), StandardCharsets.UTF_8);
+
+    HttpResponse response = httpClient.makeHttpPostRequest(restUser, restPassword, null, url);
+
+    assertNotNull(response);
+    assertTrue(response.getStatusCode() == 200);
+  }
+
+  @Test
+  public void testMakeHttpsPostRequest() {
+    String url = "https://api.duckduckgo.com/?q=KIT&format=json&pretty=1";
+
+    HttpResponse response = httpClient.makeHttpPostRequest(null, url);
+
+    // assertNotNull(response);
+    // assertTrue(response.getStatusCode() == 200);
+  }
+
+  @Test
+  public void testMakeHttpsPostRequestWithAuthorization() {
+    String url = "https://api.duckduckgo.com/?q=KIT&format=json&pretty=1";
+    String restUser = "test";
+    String restPassword = "test";
+    String auth = restUser + ":" + restPassword;
+    byte[] authZheader = auth.getBytes();
+    String authorizationHeader =
+        "Basic " + new String(Base64.encodeBase64(authZheader), StandardCharsets.UTF_8);
+
+    HttpResponse response = httpClient.makeHttpsPostRequest(restUser, restPassword, null, url);
+
+    // assertNotNull(response);
+    // assertTrue(response.getStatusCode() == 200);
   }
 }

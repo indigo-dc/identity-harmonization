@@ -45,11 +45,13 @@ public class IdentityHarmonizer {
     for (ScimUser user : scimUsers) {
       if (user.isActive()) {
         primaryUser = user;
+        log.debug("Primary user {}", primaryUser.toString());
         break;
       }
     }
 
     if (scimUsers.remove(primaryUser)) {
+      log.debug("LDAP lookup for user {}", primaryUser.getUserName());
       PosixUser primaryPosixUser = ldapClient.getPosixUser(primaryUser.getUserName());
       log.debug("Primary user {}", primaryPosixUser.toString());
 
