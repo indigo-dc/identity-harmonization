@@ -1,0 +1,2 @@
+#!/bin/bash
+java -jar /usr/lib/identity-harmonization/identity-harmonization-0.0.1.jar "$@"
