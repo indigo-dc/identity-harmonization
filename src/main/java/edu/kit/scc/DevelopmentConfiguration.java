@@ -13,16 +13,21 @@ import com.unboundid.ldap.listener.InMemoryDirectoryServer;
 import com.unboundid.ldap.listener.InMemoryDirectoryServerConfig;
 import com.unboundid.ldap.listener.InMemoryListenerConfig;
 import com.unboundid.ldap.sdk.LDAPException;
+import com.unboundid.ldif.LDIFReader;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
 import redis.embedded.RedisServer;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -75,7 +80,23 @@ public class DevelopmentConfiguration {
     }
 
     // import your test data from ldif files
-    ds.importFromLDIF(true, "src/test/resources/test-server.ldif");
+    Resource resource = new ClassPathResource("test-server.ldif");
+    BufferedReader br = null;
+    LDIFReader reader = null;
+    try {
+      br = new BufferedReader(new InputStreamReader(resource.getInputStream()));
+      reader = new LDIFReader(br);
+      ds.importFromLDIF(true, reader);
+    } catch (IOException ex) {
+      log.error("Could not read test data from ldif file");
+    } finally {
+      if (br != null) {
+        br.close();
+      }
+      if (reader != null) {
+        reader.close();
+      }
+    }
     log.debug("Set-up in-memory redis...");
     redisServer = new RedisServer(redisPort);
     try {

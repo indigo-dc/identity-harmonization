@@ -1,0 +1,11 @@
+[Unit]
+Description=identity-harmonization
+After=syslog.target
+
+[Service]
+User=idh
+ExecStart=/var/lib/identity-harmonization/identity-harmonization-0.0.1.jar
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target

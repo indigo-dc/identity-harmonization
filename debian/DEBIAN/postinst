@@ -1,0 +1,29 @@
+#!/bin/sh
+
+VERSION=0.0.1
+USER=idh
+
+count=`egrep -c "^idh:" /etc/group`
+if [ $count -eq 0 ]; then
+  echo "No idh group found ... create group"
+  addgroup --system $USER
+fi
+
+/usr/bin/id -u idh > /dev/null 2>&1
+if [ $? -eq 1 ]; then
+  echo "No idh user found .. create user"
+  adduser --system $USER --ingroup $USER
+fi
+
+if [ -f /var/lib/identity-harmonization/identity-harmonization-$VERSION.jar ]; then
+  chmod +x /var/lib/identity-harmonization/identity-harmonization-$VERSION.jar
+fi
+
+chown -R $USER:$USER /var/lib/identity-harmonization/
+
+if [ ! -L /etc/init.d/identity-harmonization ]; then
+  ln -s /var/lib/identity-harmonization/identity-harmonization-$VERSION.jar /etc/init.d/identity-harmonization
+fi
+
+service identity-harmonization start
+update-rc.d identity-harmonization defaults 99
