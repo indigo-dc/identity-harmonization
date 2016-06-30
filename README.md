@@ -1,4 +1,4 @@
-# INDIGO-DataCLoud Identity-Harmonization Service
+# INDIGO-DataCloud Identity-Harmonization Service
 
 This project provides the Identity Harmonization service as a Spring Boot application.
 

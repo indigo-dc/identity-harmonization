@@ -1,0 +1,36 @@
+server:
+  address: 0.0.0.0
+  port: 9443
+  ssl:
+    enabled: true
+    key-alias: testserver
+    key-password: changeit
+    key-store: classpath:privateKey.store
+    key-store-password: changeit
+
+rest:
+  serviceUsername: admin
+  servicePassword: admin
+
+spring:
+  profiles:
+    active: development
+  redis:
+    port: 63799
+    
+ldap:
+  port: 33389
+  url: ldap://localhost:33389
+  searchBase: dc=springframework,dc=org
+  userBase: ou=users
+  groupBase: ou=groups
+  bindDn: cn=admin
+  bindPassword: password
+  uidNumber:
+    start: 80000
+    end: 90000
+  gidNumber:
+    start: 80000
+    end: 90000
+  default:
+    gidNumber: 600000    
