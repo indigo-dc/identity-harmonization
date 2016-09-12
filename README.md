@@ -2,6 +2,10 @@
 
 This project provides the Identity Harmonization service as a Spring Boot application.
 
+## Documentation
+
+Documentation is available at [GitBook](https://www.gitbook.com/book/indigo-dc/identity-harmonization/details).
+
 ## Requirements
 
 * JDK 1.8+
