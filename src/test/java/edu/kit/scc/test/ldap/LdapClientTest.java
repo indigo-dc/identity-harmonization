@@ -81,7 +81,7 @@ public class LdapClientTest {
 
   @Test
   public void b_createLdapUserTest() {
-    PosixUser user = ldapClient.createPosixUser(posixUser);
+    PosixUser user = ldapClient.createPosixUser("ou=users", posixUser);
     assertNotNull(user);
 
     log.debug(user.toString());

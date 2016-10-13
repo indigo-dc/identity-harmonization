@@ -7,17 +7,15 @@
  * http://www.apache.org/licenses/LICENSE-2.0
  */
 
-package edu.kit.scc;
+package edu.kit.scc.ldap;
 
-import edu.kit.scc.ldap.LdapClient;
-import edu.kit.scc.ldap.PosixGroup;
-import edu.kit.scc.ldap.PosixUser;
 import edu.kit.scc.redis.RedisClient;
 import edu.kit.scc.scim.ScimGroup;
 import edu.kit.scc.scim.ScimUser;
 import edu.kit.scc.scim.ScimUser.Email;
 import edu.kit.scc.scim.ScimUser.Meta;
 import edu.kit.scc.scim.ScimUser.Name;
+import edu.kit.scc.scim.ScimUserDao;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,9 +29,9 @@ import java.util.List;
 import java.util.UUID;
 
 @Component
-public class PosixUserGenerator implements UserGenerator {
+public class PosixUserDao implements ScimUserDao {
 
-  private static final Logger log = LoggerFactory.getLogger(PosixUserGenerator.class);
+  private static final Logger log = LoggerFactory.getLogger(PosixUserDao.class);
 
   @Value("${ldap.default.gidNumber}")
   String defaultGidNumber;
@@ -44,12 +42,8 @@ public class PosixUserGenerator implements UserGenerator {
   @Autowired
   private LdapClient ldapClient;
 
-  private String generateUid(String uidNumber) {
-    return "user" + uidNumber;
-  }
-
   @Override
-  public ScimUser createUser(ScimUser scimUser) {
+  public ScimUser createUser(String userBase, ScimUser scimUser) {
     // check if default group exists
     PosixGroup defaultGroup = ldapClient.getPosixGroupByGidNumber(defaultGidNumber);
     if (defaultGroup == null) {
@@ -72,7 +66,7 @@ public class PosixUserGenerator implements UserGenerator {
     }
 
     // create a default user id
-    String uid = generateUid(uidNumber);
+    String uid = scimUser.getUserName();
 
     // populate user with default values
     PosixUser localUser = new PosixUser();
@@ -116,7 +110,7 @@ public class PosixUserGenerator implements UserGenerator {
     }
 
     // create the user locally
-    PosixUser posixUser = ldapClient.createPosixUser(localUser);
+    PosixUser posixUser = ldapClient.createPosixUser(userBase, localUser);
     if (posixUser == null) {
       log.error("could not create user in the LDAP directory");
       return null;
@@ -181,12 +175,18 @@ public class PosixUserGenerator implements UserGenerator {
     return createdUser;
   }
 
-  private ScimUser scimUserFromPosixUser(PosixUser posixUser) {
+  /**
+   * Converts a {@link PosixUser} object to a {@link ScimUser} object.
+   * 
+   * @param posixUser the {@PosixUser} object
+   * @return the posixUser as {@link ScimUser} object
+   */
+  public ScimUser scimUserFromPosixUser(PosixUser posixUser) {
     ScimUser scimUser = new ScimUser();
     scimUser.setSchemas(Arrays.asList(ScimUser.USER_SCHEMA_2_0));
 
     scimUser.setExternalId(posixUser.getUniqueIdentifier());
-    scimUser.setId(posixUser.getUidNumber());
+    scimUser.setId(posixUser.getUid());
     scimUser.setUserName(posixUser.getUid());
 
     Email email = new Email();
@@ -198,6 +198,8 @@ public class PosixUserGenerator implements UserGenerator {
     meta.put("homeDirectory", posixUser.getHomeDirectory());
     meta.put("gecos", posixUser.getGecos());
     meta.put("loginShell", posixUser.getLoginShell());
+    meta.put("uidNumber", posixUser.getUidNumber());
+    meta.put("uniqueIdentifier", posixUser.getUniqueIdentifier());
 
     scimUser.setMeta(meta);
 

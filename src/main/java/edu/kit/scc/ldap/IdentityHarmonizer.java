@@ -7,11 +7,8 @@
  * http://www.apache.org/licenses/LICENSE-2.0
  */
 
-package edu.kit.scc;
+package edu.kit.scc.ldap;
 
-import edu.kit.scc.ldap.LdapClient;
-import edu.kit.scc.ldap.PosixGroup;
-import edu.kit.scc.ldap.PosixUser;
 import edu.kit.scc.scim.ScimGroup;
 import edu.kit.scc.scim.ScimUser;
 import edu.kit.scc.scim.ScimUser.Meta;
@@ -32,6 +29,10 @@ public class IdentityHarmonizer {
   @Autowired
   private LdapClient ldapClient;
 
+  @Autowired
+  private PosixUserDao posixUserDao;
+
+
   /**
    * Links the users represented in the JSON serialized list of SCIM user's via LDAP locally.
    * 
@@ -39,6 +40,52 @@ public class IdentityHarmonizer {
    * @return a list of JSON serialized SCIM user's containing the modification information
    */
   public List<ScimUser> harmonizeIdentities(List<ScimUser> scimUsers) {
+
+    ArrayList<ScimUser> linkedUsers = null;
+    ScimUser primaryUser = null;
+
+    for (ScimUser user : scimUsers) {
+      if (user.isActive()) {
+        primaryUser = user;
+        log.debug("Primary user {}", primaryUser.toString());
+        break;
+      }
+    }
+
+    if (scimUsers.remove(primaryUser)) {
+      log.debug("LDAP lookup for user {}", primaryUser.getUserName());
+      PosixUser primaryPosixUser = ldapClient.getPosixUser(primaryUser.getUserName());
+      log.debug("Primary user {}", primaryPosixUser.toString());
+
+      linkedUsers = new ArrayList<>();
+      linkedUsers.add(posixUserDao.scimUserFromPosixUser(primaryPosixUser));
+
+      for (ScimUser user : scimUsers) {
+        log.debug("LDAP lookup for user {}", user.getUserName());
+        PosixUser posixUser = ldapClient.getPosixUser(user.getUserName());
+        log.debug("User {}", posixUser.toString());
+
+        linkedUsers.add(posixUserDao.scimUserFromPosixUser(posixUser));
+
+        posixUser.setUidNumber(primaryPosixUser.getUidNumber());
+        posixUser.setHomeDirectory(primaryPosixUser.getHomeDirectory());
+
+        PosixUser updatedUser = ldapClient.updatePosixUser(posixUser);
+
+        if (updatedUser == null) {
+          log.debug("Could not update LDAP user");
+          linkedUsers.remove(linkedUsers.size() - 1);
+        } else {
+          log.debug("Modified LDAP user {}", updatedUser.toString());
+        }
+      }
+    }
+
+    return linkedUsers;
+  }
+
+  @SuppressWarnings("unused")
+  private List<ScimUser> harmonizeIdentities_Old(List<ScimUser> scimUsers) {
     ArrayList<ScimUser> linkedUsers = new ArrayList<>();
     ScimUser primaryUser = null;
 
@@ -142,6 +189,29 @@ public class IdentityHarmonizer {
    * @return a list of JSON serialized SCIM user's containing the user's information after unlinking
    */
   public List<ScimUser> unlinkUsers(List<ScimUser> scimUsers) {
+    ArrayList<ScimUser> unlinkedUsers = new ArrayList<>();
+
+    for (ScimUser user : scimUsers) {
+      PosixUser posixUser = ldapClient.getPosixUser(user.getUserName());
+      log.debug("Posix user {}", posixUser.toString());
+
+      posixUser.setHomeDirectory(user.getMeta().get("homeDirectory"));
+      posixUser.setUidNumber(user.getMeta().get("uidNumber"));
+
+      PosixUser updatedUser = ldapClient.updatePosixUser(posixUser);
+
+      if (updatedUser != null) {
+        log.debug("Modified LDAP user {}", updatedUser.toString());
+        unlinkedUsers.add(posixUserDao.scimUserFromPosixUser(updatedUser));
+      }
+    }
+
+    return unlinkedUsers;
+  }
+
+
+  @SuppressWarnings("unused")
+  private List<ScimUser> unlinkUsers_Old(List<ScimUser> scimUsers) {
     ArrayList<ScimUser> unlinkedUsers = new ArrayList<>();
 
     for (ScimUser user : scimUsers) {

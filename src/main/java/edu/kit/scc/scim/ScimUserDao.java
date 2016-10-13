@@ -7,12 +7,10 @@
  * http://www.apache.org/licenses/LICENSE-2.0
  */
 
-package edu.kit.scc;
+package edu.kit.scc.scim;
 
-import edu.kit.scc.scim.ScimUser;
+public interface ScimUserDao {
 
-public interface UserGenerator {
-
-  public ScimUser createUser(ScimUser scimUser);
+  public ScimUser createUser(String userBase, ScimUser scimUser);
 
 }

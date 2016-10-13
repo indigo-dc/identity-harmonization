@@ -18,7 +18,7 @@ import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.support.LdapContextSource;
 
 @Configuration
-public class ServiceConfiguration {
+public class BeanConfiguration {
 
   @Value("${ldap.port}")
   private int ldapPort;
@@ -38,10 +38,14 @@ public class ServiceConfiguration {
   @Value("${spring.redis.port}")
   private int port;
 
+  @Value("${spring.redis.host}")
+  private String host;
+
   @Bean
   JedisConnectionFactory jedisConnectionFactory() {
     JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory();
     jedisConnectionFactory.setPort(port);
+    jedisConnectionFactory.setHostName(host);
     return jedisConnectionFactory;
   }
 

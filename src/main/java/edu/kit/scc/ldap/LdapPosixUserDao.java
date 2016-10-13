@@ -12,7 +12,6 @@ package edu.kit.scc.ldap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.ldap.NameAlreadyBoundException;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.filter.AndFilter;
@@ -35,15 +34,12 @@ public class LdapPosixUserDao {
   @Autowired
   private LdapTemplate ldapTemplate;
 
-  @Value("${ldap.userBase}")
-  private String userBase;
-
   /**
    * Gets all POSIX account LDAP entries.
    * 
    * @return a {@link List} of {@link PosixUser}
    */
-  public List<PosixUser> getAllUsers() {
+  public List<PosixUser> getAllUsers(String userBase) {
     return ldapTemplate.search(userBase, "(objectclass=posixAccount)",
         new LdapPosixUserAttributeMapper());
   }
@@ -93,7 +89,7 @@ public class LdapPosixUserDao {
    * @param posixUser the {@link PosixUser} to insert
    * @return the {@link PosixUser} inserted
    */
-  public PosixUser insertUser(PosixUser posixUser) {
+  public PosixUser insertUser(String userBase, PosixUser posixUser) {
     if (posixUser.commonName == null || posixUser.gidNumber == null
         || posixUser.homeDirectory == null || posixUser.surName == null || posixUser.uid == null
         || posixUser.uidNumber == null) {
@@ -162,7 +158,7 @@ public class LdapPosixUserDao {
    * @param posixUser the {@link PosixUser} to update
    * @return the {@link PosixUser} updated
    */
-  public PosixUser updateUser(PosixUser posixUser) {
+  public PosixUser updateUser(String userBase, PosixUser posixUser) {
     BasicAttribute personBasicAttribute = new BasicAttribute("objectclass");
     personBasicAttribute.add("extensibleObject");
     personBasicAttribute.add("inetOrgPerson");
@@ -234,7 +230,7 @@ public class LdapPosixUserDao {
    * @param posixUser the {@link PosixUser} to delete
    * @return true if success
    */
-  public boolean deleteUser(PosixUser posixUser) {
+  public boolean deleteUser(String userBase, PosixUser posixUser) {
     LdapName userDn = LdapUtils.emptyLdapName();
     try {
       userDn = new LdapName(userBase);

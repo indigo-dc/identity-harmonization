@@ -153,6 +153,9 @@ public class HttpClient {
         String value = Base64.encodeBase64String((user + ":" + password).getBytes());
         log.debug("Authorization: Basic {}", value);
         urlConnection.setRequestProperty("Authorization", "Basic " + value);
+      } else if (password != null && !password.isEmpty()) {
+        log.debug("Authorization: Bearer {}", password);
+        urlConnection.setRequestProperty("Authorization", "Bearer " + password);
       }
 
       if (body != null) {

@@ -61,6 +61,7 @@ public class RedisClient {
         return uidNumber;
       } else {
         log.warn("User user:{} already exists", externalId);
+        return template.opsForValue().get("user:" + externalId);
       }
     }
     return null;
