@@ -52,17 +52,7 @@ public class RedisClient {
 
     // max user id number reached
     if (Integer.valueOf(uidNumber) <= Integer.valueOf(maxUidNumber)) {
-
-      boolean userCreated = template.opsForValue().setIfAbsent("user:" + externalId, uidNumber);
-
-      if (userCreated) {
-        log.debug("User user:{} = {} created {}", externalId, uidNumber, userCreated);
-        template.opsForValue().increment("uidNumber", 1);
-        return uidNumber;
-      } else {
-        log.warn("User user:{} already exists", externalId);
-        return template.opsForValue().get("user:" + externalId);
-      }
+      return setUidNumber(externalId, uidNumber);
     }
     return null;
   }
@@ -95,5 +85,65 @@ public class RedisClient {
       }
     }
     return null;
+  }
+
+  /**
+   * Stores the user's uidNumber.
+   * 
+   * @param externalId the external id
+   * @param uidNumber the uidNumber
+   * @return the uidNumber
+   */
+  public String setUidNumber(String externalId, String uidNumber) {
+    boolean created = template.opsForValue().setIfAbsent("user:" + externalId, uidNumber);
+
+    if (created) {
+      log.debug("User user:{} = {} created {}", externalId, uidNumber, created);
+      template.opsForValue().increment("uidNumber", 1);
+      return uidNumber;
+    } else {
+      log.warn("User user:{} already exists", externalId);
+      return template.opsForValue().get("user:" + externalId);
+    }
+  }
+
+  /**
+   * Gets the user's uidNumber.
+   * 
+   * @param externalId the external id
+   * @return the uidNumber
+   */
+  public String getUidNumber(String externalId) {
+    return template.opsForValue().get("user:" + externalId);
+  }
+
+  /**
+   * Stores the user's home directory.
+   * 
+   * @param externalId the external id
+   * @param homeDirectory the home directory
+   * @return the uidNumber
+   */
+  public String setUserHome(String externalId, String homeDirectory) {
+    boolean created =
+        template.opsForValue().setIfAbsent("user:" + externalId + ":" + "home", homeDirectory);
+
+    if (created) {
+      log.debug("User user:{} = {} created {}", externalId, homeDirectory, created);
+      return homeDirectory;
+    } else {
+      log.warn("User user:{} home exists", externalId);
+      return template.opsForValue().get("user:" + externalId + ":" + "home");
+    }
+  }
+
+  /**
+   * Gets the user's home directory.
+   * 
+   * @param externalId the external id
+   * @return the homeDirectory
+   */
+  public String getUserHome(String externalId) {
+    return template.opsForValue().get("user:" + externalId + ":" + "home");
   }
 }

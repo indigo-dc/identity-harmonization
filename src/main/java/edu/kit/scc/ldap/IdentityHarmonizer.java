@@ -9,6 +9,7 @@
 
 package edu.kit.scc.ldap;
 
+import edu.kit.scc.redis.RedisClient;
 import edu.kit.scc.scim.ScimGroup;
 import edu.kit.scc.scim.ScimUser;
 import edu.kit.scc.scim.ScimUser.Meta;
@@ -31,6 +32,9 @@ public class IdentityHarmonizer {
 
   @Autowired
   private PosixUserDao posixUserDao;
+
+  @Autowired
+  private RedisClient redisClient;
 
 
   /**
@@ -60,12 +64,22 @@ public class IdentityHarmonizer {
       linkedUsers = new ArrayList<>();
       linkedUsers.add(posixUserDao.scimUserFromPosixUser(primaryPosixUser));
 
+      // store uid number and home directory for unlinking
+      redisClient.setUidNumber(primaryPosixUser.getUniqueIdentifier(),
+          primaryPosixUser.getUidNumber());
+      redisClient.setUserHome(primaryPosixUser.getUniqueIdentifier(),
+          primaryPosixUser.getHomeDirectory());
+
       for (ScimUser user : scimUsers) {
         log.debug("LDAP lookup for user {}", user.getUserName());
         PosixUser posixUser = ldapClient.getPosixUser(user.getUserName());
         log.debug("User {}", posixUser.toString());
 
         linkedUsers.add(posixUserDao.scimUserFromPosixUser(posixUser));
+
+        // store uid number and home directory for unlinking
+        redisClient.setUidNumber(posixUser.getUniqueIdentifier(), posixUser.getUidNumber());
+        redisClient.setUserHome(posixUser.getUniqueIdentifier(), posixUser.getHomeDirectory());
 
         posixUser.setUidNumber(primaryPosixUser.getUidNumber());
         posixUser.setHomeDirectory(primaryPosixUser.getHomeDirectory());
@@ -195,8 +209,12 @@ public class IdentityHarmonizer {
       PosixUser posixUser = ldapClient.getPosixUser(user.getUserName());
       log.debug("Posix user {}", posixUser.toString());
 
-      posixUser.setHomeDirectory(user.getMeta().get("homeDirectory"));
-      posixUser.setUidNumber(user.getMeta().get("uidNumber"));
+      // restore uidNumber and homDirectory from redis
+      String uidNumber = redisClient.getUidNumber(posixUser.getUniqueIdentifier());
+      String homeDirectory = redisClient.getUserHome(posixUser.getUniqueIdentifier());
+
+      posixUser.setHomeDirectory(homeDirectory);
+      posixUser.setUidNumber(uidNumber);
 
       PosixUser updatedUser = ldapClient.updatePosixUser(posixUser);
 

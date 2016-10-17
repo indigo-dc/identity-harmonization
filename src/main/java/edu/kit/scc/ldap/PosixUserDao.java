@@ -61,7 +61,7 @@ public class PosixUserDao implements ScimUserDao {
     // create a new user id number
     String uidNumber = redisClient.createUser(uniqueIdentifier);
     if (uidNumber == null) {
-      log.error("user {} already exists", uniqueIdentifier);
+      log.error("could not get uidNumber for user {}", uniqueIdentifier);
       return null;
     }
 
