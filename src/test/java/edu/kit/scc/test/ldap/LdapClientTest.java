@@ -32,7 +32,7 @@ import java.util.List;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = IdentityHarmonizationService.class)
-@ActiveProfiles("development")
+@ActiveProfiles("test")
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LdapClientTest {
 
@@ -81,7 +81,7 @@ public class LdapClientTest {
 
   @Test
   public void b_createLdapUserTest() {
-    PosixUser user = ldapClient.createPosixUser(posixUser);
+    PosixUser user = ldapClient.createPosixUser("ou=users", posixUser);
     assertNotNull(user);
 
     log.debug(user.toString());

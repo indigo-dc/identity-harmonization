@@ -11,9 +11,11 @@ package edu.kit.scc.scim;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ScimUser {
@@ -90,7 +92,7 @@ public class ScimUser {
   public static class Email {
     private String value;
     private String type;
-    private boolean primary;
+    private Boolean primary;
 
     public String getValue() {
       return value;
@@ -108,11 +110,11 @@ public class ScimUser {
       this.type = type;
     }
 
-    public boolean isPrimary() {
+    public Boolean isPrimary() {
       return primary;
     }
 
-    public void setPrimary(boolean primary) {
+    public void setPrimary(Boolean primary) {
       this.primary = primary;
     }
 
@@ -329,6 +331,9 @@ public class ScimUser {
   @JsonIgnore
   public static final String USER_SCHEMA_2_0 = "urn:ietf:params:scim:schemas:core:2.0:User";
 
+  @JsonIgnore
+  public static final String INDIGO_USER_SCHEMA_2_0 = "urn:indigo-dc:scim:schemas:IndigoUser";
+
   private List<String> schemas;
   private String id;
   private String externalId;
@@ -342,7 +347,7 @@ public class ScimUser {
   private String locale;
   private String timezone;
   private String password;
-  private boolean active;
+  private Boolean active;
   private Name name;
   private List<Email> emails;
   private List<Address> addresses;
@@ -351,6 +356,8 @@ public class ScimUser {
   private List<Photo> photos;
   private List<ScimGroup> groups;
   private Meta meta;
+  @JsonProperty(value = INDIGO_USER_SCHEMA_2_0)
+  private Map<String, Object> indigoUser;
 
   public Name getName() {
     return name;
@@ -464,11 +471,11 @@ public class ScimUser {
     this.password = password;
   }
 
-  public boolean isActive() {
+  public Boolean isActive() {
     return active;
   }
 
-  public void setActive(boolean active) {
+  public void setActive(Boolean active) {
     this.active = active;
   }
 
@@ -528,6 +535,14 @@ public class ScimUser {
     this.meta = meta;
   }
 
+  public Map<String, Object> getIndigo() {
+    return indigoUser;
+  }
+
+  public void setIndigo(Map<String, Object> indigo) {
+    this.indigoUser = indigo;
+  }
+
   @Override
   public String toString() {
     return "ScimUser [" + (schemas != null ? "schemas=" + schemas + ", " : "")
@@ -549,7 +564,8 @@ public class ScimUser {
         + (phoneNumbers != null ? "phoneNumbers=" + phoneNumbers + ", " : "")
         + (ims != null ? "ims=" + ims + ", " : "")
         + (photos != null ? "photos=" + photos + ", " : "")
-        + (groups != null ? "groups=" + groups + ", " : "") + (meta != null ? "meta=" + meta : "")
-        + "]";
+        + (groups != null ? "groups=" + groups + ", " : "")
+        + (meta != null ? "meta=" + meta + ", " : "")
+        + (indigoUser != null ? "IndigoUser=" + indigoUser : "") + "]";
   }
 }

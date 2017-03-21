@@ -9,26 +9,27 @@
 
 package edu.kit.scc;
 
-import edu.kit.scc.scim.ScimGroup;
+import edu.kit.scc.http.HttpClient;
+import edu.kit.scc.http.HttpResponse;
 import edu.kit.scc.scim.ScimUser;
 
-import org.apache.commons.codec.binary.Base64;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -37,102 +38,86 @@ public class RestServiceController {
 
   private static Logger log = LoggerFactory.getLogger(RestServiceController.class);
 
-  @Value("${rest.serviceUsername}")
-  private String restUser;
+  @Value("${oidc.token}")
+  private String oidcTokenEndpoint;
 
-  @Value("${rest.servicePassword}")
-  private String restPassword;
+  @Value("${oidc.clientid}")
+  private String oidcClientId;
+
+  @Value("${oidc.clientsecret}")
+  private String oidcClientSecret;
+
+  @Value("${scim.users}")
+  private String scimUsersEndpoint;
+
+  @Value("${scim.groups}")
+  private String scimGroupsEndpoint;
 
   @Autowired
-  private UserGenerator userGenerator;
+  private IdentityManager identityHarmonizer;
 
   @Autowired
-  private IdentityHarmonizer identityHarmonizer;
+  private HttpClient httpClient;
 
   /**
-   * SCIM create user endpoint.
+   * IAM SCIM get user endpoint.
    * 
-   * @param authorizationHeader basic or bearer HTTP authorization
-   * @param scimUser (optional) the SCIM user to create
-   * @return the created {@link ScimUser}
-   */
-  @RequestMapping(path = "/Users", method = RequestMethod.POST, consumes = "application/scim+json",
-      produces = "application/scim+json")
-  public ResponseEntity<?> createUser(@RequestHeader("Authorization") String authorizationHeader,
-      @RequestBody(required = false) ScimUser scimUser) {
-
-    ScimUser user = userGenerator.createUser(scimUser);
-
-    if (user != null) {
-      return new ResponseEntity<ScimUser>(user, HttpStatus.CREATED);
-    }
-    return new ResponseEntity<ScimUser>(scimUser, HttpStatus.BAD_REQUEST);
-  }
-
-  /**
-   * SCIM get user endpoint.
-   * 
-   * @param authorizationHeader basic or bearer HTTP authorization
-   * @param id (optional) the SCIM user's id
    * @return the {@link ScimUser}
    */
-  @RequestMapping(path = "/Users/{id}", method = RequestMethod.GET,
-      produces = "application/scim+json")
-  public ResponseEntity<?> getUser(@RequestHeader("Authorization") String authorizationHeader,
-      @PathVariable String id) {
+  @Secured({"ROLE_ADMIN", "ROLE_USER"})
+  @RequestMapping(path = "IAM/Users/{name}", method = RequestMethod.GET,
+      produces = "application/json")
+  public ResponseEntity<?> getIamScimUser(@PathVariable String name) {
 
-    ScimUser scimUser = new ScimUser();
-    scimUser.setSchemas(Arrays.asList(ScimUser.USER_SCHEMA_2_0));
-    scimUser.setActive(true);
-    scimUser.setUserName(id);
-    scimUser.setId(id);
-    scimUser.setExternalId(id);
+    // get access token
+    String body = "grant_type=client_credentials&client_id=" + oidcClientId + "&client_secret="
+        + oidcClientSecret + "&scope=scim:read";
 
-    return new ResponseEntity<ScimUser>(scimUser, HttpStatus.OK);
-  }
+    HttpResponse response = httpClient.makeHttpsPostRequest(body, oidcTokenEndpoint);
+    JSONObject json = new JSONObject(response.getResponse());
 
-  /**
-   * SCIM get group endpoint.
-   * 
-   * @param authorizationHeader basic or bearer HTTP authorization
-   * @param id (optional) the SCIM group's id
-   * @return the {@link ScimGroup}
-   */
-  @RequestMapping(path = "/Groups/{id}", method = RequestMethod.GET,
-      produces = "application/scim+json")
-  public ResponseEntity<?> getGroup(@RequestHeader("Authorization") String authorizationHeader,
-      @PathVariable String id) {
+    String accessToken = json.getString("access_token");
+    log.debug("Access token {}", accessToken);
 
-    ScimUser scimUser = new ScimUser();
-    scimUser.setSchemas(Arrays.asList(ScimUser.USER_SCHEMA_2_0));
-    scimUser.setActive(true);
-    scimUser.setUserName(id);
-    scimUser.setId(id);
-    scimUser.setExternalId(UUID.randomUUID().toString());
+    // get SCIM user
+    HttpResponse scimResponse =
+        httpClient.makeHttpsGetRequest(accessToken, null, scimUsersEndpoint);
 
-    return new ResponseEntity<ScimUser>(scimUser, HttpStatus.OK);
+    JSONObject scimUsers = new JSONObject(scimResponse.getResponse());
+    JSONArray scimResources = scimUsers.getJSONArray("Resources");
+
+    JSONObject returnObj = new JSONObject();
+
+    for (int i = 0; i < scimResources.length(); i++) {
+      JSONObject obj = scimResources.getJSONObject(i);
+
+      if (obj.getString("displayName").equals(name)) {
+        returnObj = obj;
+        break;
+      } else {
+        returnObj.put("error", "not found");
+      }
+    }
+
+    return new ResponseEntity<>(returnObj.toString(), HttpStatus.OK);
   }
 
   /**
    * Linking endpoint.
    * 
-   * @param basicAuthorization authorization header value
    * @param scimUsers a JSON serialized list of SCIM users for linking
    * @param response the HttpServletResponse
    * @return a JSON serialized list of SCIM users containing the modifications done
    */
+  @Secured({"ROLE_ADMIN", "ROLE_USER"})
   @RequestMapping(path = "/link", method = RequestMethod.POST, consumes = "application/scim+json",
       produces = "application/scim+json")
-  public ResponseEntity<?> linkUsers(@RequestHeader("Authorization") String basicAuthorization,
-      @RequestBody List<ScimUser> scimUsers, HttpServletResponse response) {
-
-    if (!verifyAuthorization(basicAuthorization)) {
-      return new ResponseEntity<String>("REST Service Unauthorized", HttpStatus.UNAUTHORIZED);
-    }
+  public ResponseEntity<?> linkUsers(@RequestBody List<ScimUser> scimUsers,
+      HttpServletResponse response) {
 
     log.debug("Request body {}", scimUsers);
 
-    List<ScimUser> modifiedUsers = identityHarmonizer.harmonizeIdentities(scimUsers);
+    List<ScimUser> modifiedUsers = scimUsers;
     if (!modifiedUsers.isEmpty()) {
       return new ResponseEntity<List<ScimUser>>(modifiedUsers, HttpStatus.OK);
     }
@@ -143,19 +128,15 @@ public class RestServiceController {
   /**
    * Unlinking endpoint.
    * 
-   * @param basicAuthorization authorization header value
    * @param scimUsers a JSON serialized list of SCIM users for unlinking
    * @param response the HttpServletResponse
    * @return A JSON serialized list of SCIM users containing the local user information.
    */
+  @Secured({"ROLE_ADMIN", "ROLE_USER"})
   @RequestMapping(path = "/unlink", method = RequestMethod.POST, consumes = "application/scim+json",
       produces = "application/scim+json")
-  public ResponseEntity<?> unlinkUsers(@RequestHeader("Authorization") String basicAuthorization,
-      @RequestBody List<ScimUser> scimUsers, HttpServletResponse response) {
-
-    if (!verifyAuthorization(basicAuthorization)) {
-      return new ResponseEntity<String>("REST Service Unauthorized", HttpStatus.UNAUTHORIZED);
-    }
+  public ResponseEntity<?> unlinkUsers(@RequestBody List<ScimUser> scimUsers,
+      HttpServletResponse response) {
 
     log.debug("Request body {}", scimUsers);
 
@@ -165,22 +146,5 @@ public class RestServiceController {
     }
 
     return new ResponseEntity<String>("Conflicting information", HttpStatus.CONFLICT);
-  }
-
-  /**
-   * Verifies the authorization.
-   * 
-   * @param basicAuthorization the authorization to verify
-   * @return true if the authorization could be verified, false otherwise
-   */
-  public boolean verifyAuthorization(String basicAuthorization) {
-    String encodedCredentials = basicAuthorization.split(" ")[1];
-    String[] credentials = new String(Base64.decodeBase64(encodedCredentials)).split(":");
-
-    if (credentials[0].equals(restUser) && credentials[1].equals(restPassword)) {
-      return true;
-    }
-    log.error("Wrong credentials {} {}", credentials[0], credentials[1]);
-    return false;
   }
 }

@@ -33,10 +33,10 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
 @Component
-@Profile("development")
-public class DevelopmentConfiguration {
+@Profile("test")
+public class TestConfiguration {
 
-  private static final Logger log = LoggerFactory.getLogger(DevelopmentConfiguration.class);
+  private static final Logger log = LoggerFactory.getLogger(TestConfiguration.class);
 
   @Value("${ldap.port}")
   private int ldapPort;

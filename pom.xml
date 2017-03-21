@@ -50,7 +50,7 @@
 						<phase>validate</phase>
 						<configuration>
 							<configLocation>google_checks.xml</configLocation>
-							<encoding>UTF-8</encoding>
+							<encoding>${project.build.sourceEncoding}</encoding>
 							<consoleOutput>true</consoleOutput>
 							<failsOnError>true</failsOnError>
 							<linkXRef>false</linkXRef>
@@ -114,7 +114,12 @@
 			<artifactId>spring-boot-starter-redis</artifactId>
 		</dependency>
 		<!-- end::Spring[] -->
-
+		<!-- tag::security[] -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+		<!-- end::security[] -->
 		<!-- tag::Test[] -->
 		<dependency>
 			<groupId>com.jayway.restassured</groupId>

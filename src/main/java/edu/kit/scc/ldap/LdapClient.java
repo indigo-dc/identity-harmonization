@@ -12,6 +12,7 @@ package edu.kit.scc.ldap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -34,6 +35,9 @@ public class LdapClient {
 
   @Autowired
   private LdapPosixGroupDao ldapPosixGroup;
+
+  @Value("${ldap.userBase}")
+  private String userBase;
 
   /**
    * Gets the POSIX user specified from the LDAP server.
@@ -75,7 +79,7 @@ public class LdapClient {
    * @return a list of {@link PosixUser} with the LDAP user information
    */
   public List<PosixUser> getPosixUsers() {
-    List<PosixUser> userList = ldapPosixUser.getAllUsers();
+    List<PosixUser> userList = ldapPosixUser.getAllUsers(userBase);
     for (int i = 0; i < userList.size(); i++) {
       log.debug("User {}", ((PosixUser) userList.get(i)).toString());
     }
@@ -116,7 +120,7 @@ public class LdapClient {
    * @return the updated {@link PosixUser}
    */
   public PosixUser updatePosixUser(PosixUser posixUser) {
-    ldapPosixUser.updateUser(posixUser);
+    ldapPosixUser.updateUser(userBase, posixUser);
 
     return getPosixUser(posixUser.getUid());
   }
@@ -130,7 +134,7 @@ public class LdapClient {
   public boolean deleteUser(String uid) {
     PosixUser user = new PosixUser();
     user.setUid(uid);
-    return ldapPosixUser.deleteUser(user);
+    return ldapPosixUser.deleteUser(userBase, user);
   }
 
   /**
@@ -151,9 +155,9 @@ public class LdapClient {
    * @param user the {@link PosixUser} to create
    * @return the created {@link PosixUser}
    */
-  public PosixUser createPosixUser(PosixUser user) {
-    ldapPosixUser.insertUser(user);
-    return getPosixUser(user.getUid());
+  public PosixUser createPosixUser(String userBase, PosixUser user) {
+    return ldapPosixUser.insertUser(userBase, user);
+    // return getPosixUser(user.getUid());
   }
 
   /**
@@ -227,7 +231,7 @@ public class LdapClient {
     int min = 10000;
     Random rand = new Random();
     ArrayList<String> existingUidNumbers = new ArrayList<String>();
-    List<PosixUser> users = ldapPosixUser.getAllUsers();
+    List<PosixUser> users = ldapPosixUser.getAllUsers(userBase);
     for (PosixUser user : users) {
       existingUidNumbers.add(user.getUidNumber());
     }
