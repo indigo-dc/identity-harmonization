@@ -152,7 +152,7 @@ public class IdentityManager {
   /**
    * Converts a {@link PosixUser} object to a {@link ScimUser} object.
    * 
-   * @param posixUser the {@PosixUser} object
+   * @param posixUser the {@link PosixUser} object
    * @return the posixUser as {@link ScimUser} object
    */
   public ScimUser scimUserFromPosixUser(PosixUser posixUser) {
