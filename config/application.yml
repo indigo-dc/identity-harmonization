@@ -1,5 +1,5 @@
 server:
-  location: https://idh.data.kit.edu
+  location: https://localhost
   address: 0.0.0.0
   port: 9443
   ssl:
@@ -20,12 +20,12 @@ spring:
     
 ldap:
   port: 10389
-  url: ldap://ldf.data.kit.edu:10389
-  searchBase: ou=fed,dc=test,dc=kit,dc=edu
+  url: ldap://localhost:10389
+  searchBase: dc=springframework,dc=org
   userBase: ou=users
   groupBase: ou=groups
-  bindDn: uid=admin,ou=system
-  bindPassword: WKbXhc9gxBcY
+  bindDn: uid=admin
+  bindPassword: password
   uidNumber:
     start: 10000000
     end: 11000000
