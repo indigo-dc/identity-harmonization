@@ -60,10 +60,10 @@ public final class CustomUrlConnection {
       urlConnection.setSSLSocketFactory(sslContext.getSocketFactory());
 
     } catch (MalformedURLException e) {
-      // e.printStackTrace();
+      e.printStackTrace();
       log.error(e.getMessage());
     } catch (IOException e) {
-      // e.printStackTrace();
+      e.printStackTrace();
       log.error(e.getMessage());
     }
     return urlConnection;

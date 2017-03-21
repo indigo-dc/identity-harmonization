@@ -32,7 +32,7 @@ import java.util.List;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = IdentityHarmonizationService.class)
-@ActiveProfiles("development")
+@ActiveProfiles("test")
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LdapClientTest {
 

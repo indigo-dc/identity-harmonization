@@ -22,12 +22,14 @@ import edu.kit.scc.scim.ScimUser10.Meta;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.Arrays;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = IdentityHarmonizationService.class)
+@ActiveProfiles("test")
 public class ScimModelTest {
 
   @Test

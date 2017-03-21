@@ -12,7 +12,6 @@ package edu.kit.scc.test;
 import edu.kit.scc.test.http.HttpClientTest;
 import edu.kit.scc.test.ldap.LdapClientTest;
 import edu.kit.scc.test.redis.RedisClientTest;
-import edu.kit.scc.test.rest.AuthorizationTest;
 import edu.kit.scc.test.rest.RestServiceTest;
 import edu.kit.scc.test.scim.ScimModelTest;
 
@@ -21,7 +20,7 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({CreatePosixUserTest.class, LdapClientTest.class, RedisClientTest.class,
-    HttpClientTest.class, AuthorizationTest.class, RestServiceTest.class, ScimModelTest.class})
+    HttpClientTest.class, RestServiceTest.class, ScimModelTest.class})
 public class TestSuite {
 
 }

@@ -28,7 +28,7 @@ import java.util.UUID;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = IdentityHarmonizationService.class)
-@ActiveProfiles("development")
+@ActiveProfiles("test")
 public class RedisClientTest {
 
   @SuppressWarnings("unused")
@@ -50,16 +50,4 @@ public class RedisClientTest {
     // assertNull(uidNumber);
   }
 
-  @Test
-  public void createGroupTest() {
-    String uuid = UUID.randomUUID().toString();
-
-    String gidNumber = redisClient.createGroup(uuid);
-
-    assertNotNull(gidNumber);
-
-    gidNumber = redisClient.createGroup(uuid);
-
-    assertNull(gidNumber);
-  }
 }

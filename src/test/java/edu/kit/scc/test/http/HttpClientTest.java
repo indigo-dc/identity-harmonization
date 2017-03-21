@@ -31,23 +31,23 @@ import java.nio.charset.StandardCharsets;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = IdentityHarmonizationService.class)
-@ActiveProfiles("development")
+@ActiveProfiles("test")
 public class HttpClientTest {
   private static final Logger log = LoggerFactory.getLogger(HttpClientTest.class);
 
   @Autowired
   private HttpClient httpClient;
 
-  protected static String httpUrl = "http://api.rottentomatoes.com/api/public/v1.0";
-  protected static String httpsUrl = "https://launchlibrary.net/1.2/agency/NASA";
+  protected static String httpUrl = "http://www.kit.edu";
+  protected static String httpsUrl = "https://tools.ietf.org/html/rfc7644";
 
-  @Test
+  //@Test
   public void makeHttpPostRequestTest() {
     HttpResponse httpResponse = httpClient.makeHttpPostRequest("hello", httpUrl);
     assertNull(httpResponse);
   }
 
-  @Test
+  //@Test
   public void makeHttpGetRequestTest() {
     HttpResponse httpResponse = httpClient.makeHttpGetRequest(httpUrl);
     assertNotNull(httpResponse);
@@ -55,7 +55,7 @@ public class HttpClientTest {
     log.debug(httpResponse.toString());
   }
 
-  @Test
+  // @Test
   public void makeHttpsPostRequestTest() {
 
     HttpResponse httpResponse = httpClient.makeHttpsPostRequest("hello", httpsUrl);

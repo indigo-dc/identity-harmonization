@@ -112,6 +112,19 @@ public class HttpClient {
   }
 
   /**
+   * Makes a HTTPS GET request with bearer authorization.
+   * 
+   * @param token the token for bearer HTTP authorization
+   * @param url the URL for the request
+   * @return a {@link edu.kit.scc.http.HttpResponse} with the request's response code and response
+   *         stream as {@link byte[]}
+   */
+  public HttpResponse makeHttpsGetRequest(String token, String url) {
+    return makeRequest(CustomUrlConnection.getSecureHttpConnection(false, url), token, null, null,
+        RequestMethod.GET);
+  }
+
+  /**
    * Makes a HTTPS POST request.
    * 
    * @param body the body for the HTTP POST request
@@ -150,12 +163,14 @@ public class HttpClient {
       urlConnection.setRequestProperty("Accept", "*/*");
 
       if (user != null && !user.isEmpty()) {
-        String value = Base64.encodeBase64String((user + ":" + password).getBytes());
-        log.debug("Authorization: Basic {}", value);
-        urlConnection.setRequestProperty("Authorization", "Basic " + value);
-      } else if (password != null && !password.isEmpty()) {
-        log.debug("Authorization: Bearer {}", password);
-        urlConnection.setRequestProperty("Authorization", "Bearer " + password);
+        if (password != null && !password.isEmpty()) {
+          String value = Base64.encodeBase64String((user + ":" + password).getBytes());
+          log.debug("Authorization: Basic {}", value);
+          urlConnection.setRequestProperty("Authorization", "Basic " + value);
+        } else {
+          log.debug("Authorization: Bearer {}", user);
+          urlConnection.setRequestProperty("Authorization", "Bearer " + user);
+        }
       }
 
       if (body != null) {
@@ -169,17 +184,15 @@ public class HttpClient {
       urlConnection.connect();
       in = urlConnection.getInputStream();
       buffReader = new BufferedReader(new InputStreamReader(in));
-
       StringBuffer stringBuffer = new StringBuffer();
       String inputLine;
       while ((inputLine = buffReader.readLine()) != null) {
         stringBuffer.append(inputLine);
       }
-
       response = new HttpResponse(urlConnection.getResponseCode(), stringBuffer.toString());
 
     } catch (IOException e) {
-      // e.printStackTrace();
+      e.printStackTrace();
       log.error("ERROR {}", e.getMessage());
     } catch (Exception e) {
       // e.printStackTrace();
