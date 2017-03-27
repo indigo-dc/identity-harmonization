@@ -21,7 +21,7 @@ RUN cd identity-harmonization && \
     git pull && \ 
     mvn clean package
 
-ENTRYPOINT ["/identity-harmonization/target/identity-harmonization-0.0.1.jar"]
+ENTRYPOINT ["/identity-harmonization/target/identity-harmonization-2.0.jar"]
 #CMD ["--server.port=8080 --cdmi.data.baseDirectory=/data"]
 
 # Expose data folder and port

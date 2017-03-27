@@ -3,10 +3,10 @@
 %define buildroot	%{_topdir}/build-rpm-root
 
 %define name		identity-harmonization
-%define jarversion	0.0.1
+%define jarversion	2.0
 
 Name:		%{name}
-Version:	0.0.1
+Version:	%{jarversion}
 Release:	1%{?dist}
 Summary:	Identity-Harmonization Service.
 
