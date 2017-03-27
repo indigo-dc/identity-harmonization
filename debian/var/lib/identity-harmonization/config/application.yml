@@ -1,4 +1,5 @@
 server:
+  location: https://localhost
   address: 0.0.0.0
   port: 9443
   ssl:
@@ -7,30 +8,29 @@ server:
     key-password: changeit
     key-store: classpath:privateKey.store
     key-store-password: changeit
-
+    
 rest:
   serviceUsername: admin
   servicePassword: admin
-
+  
 spring:
-  profiles:
-    active: development
   redis:
-    port: 63799
+    port: 6379
+    host: localhost
     
 ldap:
-  port: 33389
-  url: ldap://localhost:33389
+  port: 10389
+  url: ldap://localhost:10389
   searchBase: dc=springframework,dc=org
   userBase: ou=users
   groupBase: ou=groups
-  bindDn: cn=admin
+  bindDn: uid=admin
   bindPassword: password
   uidNumber:
-    start: 80000
-    end: 90000
+    start: 10000000
+    end: 11000000
   gidNumber:
-    start: 80000
-    end: 90000
+    start: 10000000
+    end: 11000000
   default:
-    gidNumber: 600000    
+    gidNumber: 600000

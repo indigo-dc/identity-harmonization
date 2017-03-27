@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VERSION=0.0.1
+VERSION=2.0
 USER=idh
 
 count=`egrep -c "^idh:" /etc/group`

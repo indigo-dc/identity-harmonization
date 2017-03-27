@@ -4,7 +4,7 @@ After=syslog.target
 
 [Service]
 User=idh
-ExecStart=/var/lib/identity-harmonization/identity-harmonization-0.0.1.jar
+ExecStart=/var/lib/identity-harmonization/identity-harmonization-2.0.jar
 SuccessExitStatus=143
 
 [Install]

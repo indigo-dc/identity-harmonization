@@ -22,4 +22,4 @@ mvn clean package
 The service can run without any additional server deployment (Tomcat, JBoss, etc.).
 
 ```
-java -jar identity-harmonization-0.0.1.jar
+java -jar identity-harmonization-2.0.jar
